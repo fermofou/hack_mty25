@@ -49,9 +49,11 @@ export default function ApplyCreditPage() {
 
     const userMessage: Message = { role: "user", content: input };
     const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
-    setIsLoading(true);
-    setCreditOffers(null);
+
+  setMessages(newMessages);
+  setInput(""); // Clear input immediately
+  setIsLoading(true);
+  setCreditOffers(null);
 
     try {
       const conversation_context = buildConversationContext(newMessages);
