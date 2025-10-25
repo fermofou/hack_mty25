@@ -1,12 +1,5 @@
-from pydantic import BaseModel
-from baseGeminiQueries import gemini_structured_response
-from typing import Literal
-
-
-class ChatResponseType(BaseModel):
-    """Structured output model for analysis results"""
-
-    response_type: Literal["text", "credit"]
+from .baseGeminiQueries import gemini_structured_response
+from models.products import ChatResponseType
 
 
 def determine_response_type(message: str) -> ChatResponseType:
@@ -17,15 +10,18 @@ def determine_response_type(message: str) -> ChatResponseType:
       
       Possible types are: 'text', 'credit'.
       
+      Additionally, identify the specific object or product mentioned in the message. If multiple objects are mentioned, choose the most relevant or interesting one for the user based on context. If no specific object is mentioned (for general information requests), set object_in_response to an empty string.
+      
       Examples:
-      - "What are some tips for reducing my carbon footprint?" -> response_type: "text"
-      - "Can I get a credit for installing solar panels on my house?" -> response_type: "credit"
-      - "Is there any financial support for buying an electric vehicle?" -> response_type: "credit"
-      - "I'm interested in buying a high-efficiency washing machine" -> response_type: "credit"
-      - "Tell me about LED light bulbs for my home" -> response_type: "credit"
+      - "What are some tips for reducing my carbon footprint?" -> response_type: "text", object_in_response: ""
+      - "Can I get a credit for installing solar panels on my house?" -> response_type: "credit", object_in_response: "solar panels"
+      - "Is there any financial support for buying an electric vehicle?" -> response_type: "credit", object_in_response: "electric vehicle"
+      - "I'm interested in buying a high-efficiency washing machine" -> response_type: "credit", object_in_response: "high-efficiency washing machine"
+      - "Tell me about LED light bulbs for my home" -> response_type: "credit", object_in_response: "LED light bulbs"
+      - "I want to buy solar panels and a water heater" -> response_type: "credit", object_in_response: "solar panels"
       
       Message: "{message}"
-      Respond with a JSON object with a single field 'response_type' indicating the type.
+      Respond with a JSON object with two fields: 'response_type' indicating the type, and 'object_in_response' containing the specific object mentioned (or empty string if none).
     """
     return gemini_structured_response(prompt, ChatResponseType)
 
