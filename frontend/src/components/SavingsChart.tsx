@@ -34,9 +34,12 @@ export const SavingsChart: React.FC<SavingsChartProps> = ({
   // Fixed dimensions that work well in the container
   const width = 500;
   const height = 260;
-  const padding = 55; // Increased from 45 to give more space for labels
-  const chartWidth = width - 2 * padding;
-  const chartHeight = height - 2 * padding;
+  const paddingTop = 50;
+  const paddingLeft = 70; // Higher left padding for y-axis labels
+  const paddingRight = 30;
+  const paddingBottom = 30;
+  const chartWidth = width - paddingLeft - paddingRight;
+  const chartHeight = height - paddingTop - paddingBottom;
 
   // Calculate scales
   const maxSavings = Math.max(...currentData.map((d) => d.cumulativeSavings));
@@ -44,9 +47,9 @@ export const SavingsChart: React.FC<SavingsChartProps> = ({
 
   // Generate points for the line
   const points = currentData.map((item, index) => {
-    const x = padding + index * xStep;
+    const x = paddingLeft + index * xStep;
     const y =
-      padding +
+      paddingTop +
       chartHeight -
       (item.cumulativeSavings / maxSavings) * chartHeight;
     return { x, y, ...item };
@@ -62,7 +65,7 @@ export const SavingsChart: React.FC<SavingsChartProps> = ({
   const gridLines = [];
   const numGridLines = 4;
   for (let i = 0; i <= numGridLines; i++) {
-    const y = padding + (chartHeight / numGridLines) * i;
+    const y = paddingTop + (chartHeight / numGridLines) * i;
     const value = maxSavings - (maxSavings / numGridLines) * i;
     gridLines.push({ y, value });
   }
@@ -81,7 +84,7 @@ export const SavingsChart: React.FC<SavingsChartProps> = ({
   return (
     <div className={`w-full ${className}`}>
       {/* Chart Container with proper sizing */}
-      <div className='w-full px-2'>
+      <div className='w-full px-4'>
         <svg
           width={width}
           height={height}
@@ -94,16 +97,16 @@ export const SavingsChart: React.FC<SavingsChartProps> = ({
           {gridLines.map((line, index) => (
             <g key={index}>
               <line
-                x1={padding}
+                x1={paddingLeft}
                 y1={line.y}
-                x2={width - padding}
+                x2={width - paddingRight}
                 y2={line.y}
                 stroke='#e5e7eb'
                 strokeWidth='1'
                 opacity='0.5'
               />
               <text
-                x={padding - 15}
+                x={paddingLeft - 20}
                 y={line.y + 4}
                 textAnchor='end'
                 className='fill-gray-500 text-xs'
@@ -128,9 +131,9 @@ export const SavingsChart: React.FC<SavingsChartProps> = ({
           </defs>
 
           <path
-            d={`${pathString} L ${width - padding} ${
-              padding + chartHeight
-            } L ${padding} ${padding + chartHeight} Z`}
+            d={`${pathString} L ${width - paddingRight} ${
+              paddingTop + chartHeight
+            } L ${paddingLeft} ${paddingTop + chartHeight} Z`}
             fill={`url(#areaGradient-${selectedCategory})`}
             className='transition-all duration-500'
           />
@@ -185,7 +188,7 @@ export const SavingsChart: React.FC<SavingsChartProps> = ({
             <text
               key={index}
               x={point.x}
-              y={height - padding + 20}
+              y={height - paddingBottom + 20}
               textAnchor='middle'
               className='fill-gray-600 text-xs'
             >
