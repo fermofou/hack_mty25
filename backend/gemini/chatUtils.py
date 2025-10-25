@@ -26,7 +26,9 @@ def determine_response_type(message: str) -> ChatResponseType:
     return gemini_structured_response(prompt, ChatResponseType)
 
 
-def create_credit_offers(conversation_context: str) -> list[CreditOffer]:
+def create_credit_offers(
+    conversation_context: str, num_offers: int = 3
+) -> CreditOffers:
     prompt = f"""
     You are a financial advisor specializing in green financing and sustainable products. Based on the conversation context provided, generate realistic credit offers for green products that help reduce environmental impact.
     
@@ -96,7 +98,7 @@ def create_credit_offers(conversation_context: str) -> list[CreditOffer]:
     - Match credit offers to products that address their highest utility expenses
     - Ensure monthly payments are affordable (typically 20-35% of monthly income)
     - Show realistic ROI and payback periods
-    - Generate 3 offers with varying terms and amounts
+    - Generate {num_offers} offers with varying terms and amounts
         
     ---------
     CONVERSATION CONTEXT:
@@ -104,7 +106,7 @@ def create_credit_offers(conversation_context: str) -> list[CreditOffer]:
     
     ---------
     INSTRUCTIONS:
-    Respond with a JSON array of 3 realistic credit offer objects. Each offer MUST include all fields including the product data (nombre, link, img_link, precio). The product should be specific and tailored to the user's actual situation and needs.
+    Respond with a JSON array of {num_offers} realistic credit offer objects. Each offer MUST include all fields including the product data (nombre, link, img_link, precio). The product should be specific and tailored to the user's actual situation and needs.
     """
 
     return gemini_structured_response(prompt, CreditOffers)
