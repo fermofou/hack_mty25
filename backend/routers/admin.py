@@ -137,40 +137,63 @@ async def aceptar_credito(
     await session.refresh(credito)
     return {"ok": True, "id_cred": credito.id_cred, "nuevo_estado": credito.estado}
 
+
+def build_creditos_response(creditos, session):
+    # Helper para armar la respuesta con info de cliente e item
+    async def build():
+        response = []
+        for credito in creditos:
+            cliente = await session.get(Cliente, credito.cliente_id)
+            item = await session.get(Item, credito.item_id) if credito.item_id else None
+            response.append({
+                "credito": {
+                    "prestamo": credito.prestamo,
+                    "interes": credito.interes,
+                    "meses_originales": credito.meses_originales,
+                    "categoria": credito.categoria,
+                    "descripcion": credito.descripcion,
+                    "gasto_inicial_mes": credito.gasto_inicial_mes,
+                    "gasto_final_mes": credito.gasto_final_mes
+                },
+                "cliente": {
+                    "nombre": cliente.nombre,
+                    "apellido": cliente.apellido,
+                    "edad": cliente.edad,
+                    "fecha_nacimiento": cliente.fecha_nacimiento,
+                    "saldo": cliente.saldo,
+                    "credit_score": cliente.credit_score
+                } if cliente else None,
+                "item": {
+                    "nombre": item.nombre,
+                    "link": item.link,
+                    "img_link": item.img_link,
+                    "precio": item.precio
+                } if item else None
+            })
+        return response
+    return build
+
 @router.get("/manage_credits/pendientes")
 async def creditos_pendientes(session: AsyncSession = Depends(get_session)):
     """Devuelve todos los créditos en estado PENDIENTE, con info de cliente e item relacionado."""
     statement = select(Credito).where(Credito.estado == "PENDIENTE")
     result = await session.execute(statement)
     creditos = result.scalars().all()
-    response = []
-    for credito in creditos:
-        cliente = await session.get(Cliente, credito.cliente_id)
-        item = await session.get(Item, credito.item_id) if credito.item_id else None
-        response.append({
-            "credito": {
-                "prestamo": credito.prestamo,
-                "interes": credito.interes,
-                "meses_originales": credito.meses_originales,
-                "categoria": credito.categoria,
-                "descripcion": credito.descripcion,
-                "gasto_inicial_mes": credito.gasto_inicial_mes,
-                "gasto_final_mes": credito.gasto_final_mes
-            },
-            "cliente": {
-                "nombre": cliente.nombre,
-                "apellido": cliente.apellido,
-                "edad": cliente.edad,
-                "fecha_nacimiento": cliente.fecha_nacimiento,
-                "saldo": cliente.saldo,
-                "credit_score": cliente.credit_score
-            } if cliente else None,
-            "item": {
-                "nombre": item.nombre,
-                "link": item.link,
-                "img_link": item.img_link,
-                "precio": item.precio
-            } if item else None
-        })
-    return response
+    return await build_creditos_response(creditos, session)()
+
+@router.get("/manage_credits/aprovados")
+async def creditos_aprovados(session: AsyncSession = Depends(get_session)):
+    """Devuelve todos los créditos en estado APROBADO, con info de cliente e item relacionado."""
+    statement = select(Credito).where(Credito.estado == "APROBADO")
+    result = await session.execute(statement)
+    creditos = result.scalars().all()
+    return await build_creditos_response(creditos, session)()
+
+@router.get("/manage_credits/negados")
+async def creditos_negados(session: AsyncSession = Depends(get_session)):
+    """Devuelve todos los créditos en estado NEGADO, con info de cliente e item relacionado."""
+    statement = select(Credito).where(Credito.estado == "NEGADO")
+    result = await session.execute(statement)
+    creditos = result.scalars().all()
+    return await build_creditos_response(creditos, session)()
 
