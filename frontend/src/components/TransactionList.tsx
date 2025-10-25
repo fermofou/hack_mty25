@@ -38,7 +38,7 @@ function TransactionList() {
       : userTransactions?.filter(
           (t) =>
             t.categoria === selectedCategory ||
-            !categoryList.includes(t.categoria)
+            (!categoryList.includes(t.categoria) && selectedCategory === '_')
         )) ?? [];
 
   const categories: { value: string; label: string }[] = [
@@ -76,90 +76,100 @@ function TransactionList() {
       <Card>
         <CardContent className='p-0'>
           <div className='divide-y'>
-            {filteredTransactions.length === 0 ? (
+            {userTransactions === undefined ? (
               <div className='p-8 text-center text-muted-foreground'>
-                No hay transacciones en esta categoría
+                Cargando transacciones...
               </div>
             ) : (
-              filteredTransactions.map((transaction) => (
-                <div
-                  key={transaction.id}
-                  className='flex items-center justify-between p-4 hover:bg-secondary/50'
-                >
-                  <div className='flex items-center gap-4'>
+              <>
+                {filteredTransactions.length === 0 ? (
+                  <div className='p-8 text-center text-muted-foreground'>
+                    No hay transacciones en esta categoría
+                  </div>
+                ) : (
+                  filteredTransactions.map((transaction) => (
                     <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                        transaction.monto < 0
-                          ? 'bg-[#6CC04A]/10'
-                          : 'bg-[#EB0029]/10'
-                      }`}
+                      key={transaction.id}
+                      className='flex items-center justify-between p-4 hover:bg-secondary/50'
                     >
-                      {transaction.monto < 0 ? (
-                        <ArrowUpRightIcon className='h-5 w-5 text-[#6CC04A]' />
-                      ) : (
-                        <ArrowDownLeft className='h-5 w-5 text-[#EB0029]' />
-                      )}
-                    </div>
-                    <div>
-                      <p className='font-medium'>{transaction.descripcion}</p>
-                      <div className='flex items-center gap-2 mt-1'>
-                        <p className='text-xs text-muted-foreground'>
-                          {new Date(transaction.fecha).toLocaleDateString(
-                            'es-MX',
-                            {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                            }
-                          )}
-                        </p>
-                        <Badge
-                          variant='secondary'
-                          className='text-xs'
-                          style={{
-                            backgroundColor:
-                              transaction.categoria === 'Luz'
-                                ? '#fef3c7' // yellow-100
-                                : transaction.categoria === 'Transporte'
-                                ? '#dbeafe' // blue-100
-                                : transaction.categoria === 'Agua'
-                                ? '#cffafe' // cyan-100
-                                : transaction.categoria === 'Gas'
-                                ? '#fed7aa' // orange-100
-                                : '#f3f4f6', // gray-100 (default)
-                            color:
-                              transaction.categoria === 'Luz'
-                                ? '#92400e' // yellow-800
-                                : transaction.categoria === 'Transporte'
-                                ? '#1e40af' // blue-800
-                                : transaction.categoria === 'Agua'
-                                ? '#155e75' // cyan-800
-                                : transaction.categoria === 'Gas'
-                                ? '#9a3412' // orange-800
-                                : '#1f2937', // gray-800 (default)
-                          }}
+                      <div className='flex items-center gap-4'>
+                        <div
+                          className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                            transaction.monto < 0
+                              ? 'bg-[#6CC04A]/10'
+                              : 'bg-[#EB0029]/10'
+                          }`}
                         >
-                          {categories.find(
-                            (c) => c.value === transaction.categoria
-                          )?.label ?? 'Otros'}
-                        </Badge>
+                          {transaction.monto < 0 ? (
+                            <ArrowUpRightIcon className='h-5 w-5 text-[#6CC04A]' />
+                          ) : (
+                            <ArrowDownLeft className='h-5 w-5 text-[#EB0029]' />
+                          )}
+                        </div>
+                        <div>
+                          <p className='font-medium'>
+                            {transaction.descripcion}
+                          </p>
+                          <div className='flex items-center gap-2 mt-1'>
+                            <p className='text-xs text-muted-foreground'>
+                              {new Date(transaction.fecha).toLocaleDateString(
+                                'es-MX',
+                                {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric',
+                                }
+                              )}
+                            </p>
+                            <Badge
+                              variant='secondary'
+                              className='text-xs'
+                              style={{
+                                backgroundColor:
+                                  transaction.categoria === 'Luz'
+                                    ? '#fef3c7' // yellow-100
+                                    : transaction.categoria === 'Transporte'
+                                    ? '#dbeafe' // blue-100
+                                    : transaction.categoria === 'Agua'
+                                    ? '#cffafe' // cyan-100
+                                    : transaction.categoria === 'Gas'
+                                    ? '#fed7aa' // orange-100
+                                    : '#f3f4f6', // gray-100 (default)
+                                color:
+                                  transaction.categoria === 'Luz'
+                                    ? '#92400e' // yellow-800
+                                    : transaction.categoria === 'Transporte'
+                                    ? '#1e40af' // blue-800
+                                    : transaction.categoria === 'Agua'
+                                    ? '#155e75' // cyan-800
+                                    : transaction.categoria === 'Gas'
+                                    ? '#9a3412' // orange-800
+                                    : '#1f2937', // gray-800 (default)
+                              }}
+                            >
+                              {categories.find(
+                                (c) => c.value === transaction.categoria
+                              )?.label ?? 'Otros'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className={`text-lg font-semibold ${
+                          transaction.monto < 0
+                            ? 'text-[#6CC04A]'
+                            : 'text-foreground'
+                        }`}
+                      >
+                        {transaction.monto < 0 ? '+' : ''}$
+                        {Math.abs(transaction.monto).toLocaleString('es-MX', {
+                          minimumFractionDigits: 2,
+                        })}
                       </div>
                     </div>
-                  </div>
-                  <div
-                    className={`text-lg font-semibold ${
-                      transaction.monto < 0
-                        ? 'text-[#6CC04A]'
-                        : 'text-foreground'
-                    }`}
-                  >
-                    {transaction.monto < 0 ? '+' : ''}$
-                    {Math.abs(transaction.monto).toLocaleString('es-MX', {
-                      minimumFractionDigits: 2,
-                    })}
-                  </div>
-                </div>
-              ))
+                  ))
+                )}
+              </>
             )}
           </div>
         </CardContent>

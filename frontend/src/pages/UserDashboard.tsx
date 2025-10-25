@@ -97,7 +97,8 @@ export default function UserDashboard() {
                     <p className='text-sm lg:text-base text-gray-700 leading-relaxed'>
                       Instala paneles solares en tu hogar y reduce tu factura de
                       luz hasta un{' '}
-                      <span className='font-semibold text-green-700'>90%</span>
+                      <span className='font-semibold text-green-700'>90%</span>{' '}
+                      en 60 meses.
                     </p>
                     <p className='text-base lg:text-lg font-bold text-green-700 mt-1 lg:mt-2'>
                       Hasta $100,000 disponibles
@@ -125,6 +126,20 @@ export default function UserDashboard() {
               }`}
             >
               <div className='space-y-3 lg:space-y-4 pt-2'>
+                <div className='bg-white rounded-lg p-4 border border-green-200'>
+                  <div className='flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4'>
+                    <div className='flex-1'>
+                      <p className='text-sm lg:text-base text-gray-700 leading-relaxed'>
+                        Con un crédito verde puedes instalar paneles solares sin
+                        afectar tu presupuesto. Pagarías una mensualidad similar
+                        a la que ya destinas a la luz, mientras reduces el
+                        consumo de la red y mejoras la eficiencia energética de
+                        tu hogar.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Credit details grid */}
                 <div className='grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4'>
                   <div className='bg-white rounded-lg p-2 lg:p-3 text-center border border-green-200 transform transition-transform duration-300 hover:scale-105'>

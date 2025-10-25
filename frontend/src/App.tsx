@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthProvider';
 import LoginPage from './pages/LoginPage';
 import LoginPageAdmin from './pages/LoginPageAdmin';
 import UserDashboard from './pages/UserDashboard';
+import CreditsDashboard from './pages/CreditsDashboard';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
           <Route path='/' element={<LoginPage />} />
           <Route path='/admin' element={<LoginPageAdmin />} />
           <Route path='/user/dashboard' element={<UserDashboard />} />
+          <Route path='/user/credits' element={<CreditsDashboard />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
