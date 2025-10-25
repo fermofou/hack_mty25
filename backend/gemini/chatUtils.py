@@ -1,5 +1,5 @@
 from .baseGeminiQueries import gemini_structured_response
-from models.products import ChatResponseType
+from models.gemini import ChatResponseType
 
 
 def determine_response_type(message: str) -> ChatResponseType:
