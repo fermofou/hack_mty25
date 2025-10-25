@@ -112,7 +112,4 @@ async def read_transacciones_cliente(cliente_id: int, session: AsyncSession = De
     result = await session.execute(statement)
     transacciones = result.scalars().all()
     
-    if not transacciones:
-        raise HTTPException(status_code=404, detail="No se encontraron transacciones para este cliente")
-    
     return transacciones
