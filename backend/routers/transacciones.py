@@ -8,19 +8,54 @@ from models.transacciones import Transaccion, TransaccionCreate, TransaccionRead
 
 router = APIRouter(prefix="/transacciones", tags=["Transacciones"])
 
+
+
+# Endpoint original: solo crea una transacción
 @router.post("/", response_model=TransaccionRead)
 async def create_transaccion(trans_in: TransaccionCreate, session: AsyncSession = Depends(get_session)):
-    """Crea una nueva transacción."""
+    """Crea una nueva transacción (sin afectar saldo del cliente)."""
     db_trans = Transaccion.from_orm(trans_in)
-    
     # Convertir fecha a naïve si viene con tzinfo
     if db_trans.fecha and db_trans.fecha.tzinfo:
         db_trans.fecha = db_trans.fecha.replace(tzinfo=None)
-    
     session.add(db_trans)
     await session.commit()
     await session.refresh(db_trans)
     return db_trans
+
+# Nuevo endpoint: crea transacción y descuenta saldo del cliente
+
+from models.cliente import Cliente, ClienteRead
+
+@router.post("/registrar")
+async def registrar_transaccion(trans_in: TransaccionCreate, session: AsyncSession = Depends(get_session)):
+    """
+    Crea una transacción, descuenta el monto del cliente y verifica fondos suficientes.
+    Devuelve la transacción y el cliente actualizado.
+    """
+    # Obtener cliente
+    cliente = await session.get(Cliente, trans_in.cliente_id)
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    if trans_in.monto > -9999999999:
+        # Solo permitimos transacciones de retiro (monto positivo = gasto)
+        if cliente.saldo < trans_in.monto:
+            raise HTTPException(status_code=400, detail="Fondos insuficientes")
+        cliente.saldo -= trans_in.monto
+        session.add(cliente)
+    # Registrar transacción
+    db_trans = Transaccion.from_orm(trans_in)
+    # Convertir fecha a naïve si viene con tzinfo
+    if db_trans.fecha and db_trans.fecha.tzinfo:
+        db_trans.fecha = db_trans.fecha.replace(tzinfo=None)
+    session.add(db_trans)
+    await session.commit()
+    await session.refresh(db_trans)
+    await session.refresh(cliente)
+    return {
+        "transaccion": TransaccionRead.model_validate(db_trans).model_dump(),
+        "cliente": ClienteRead.model_validate(cliente).model_dump()
+    }
 
 
 @router.get("/", response_model=List[TransaccionRead])

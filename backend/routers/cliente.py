@@ -154,10 +154,15 @@ async def cliente_signup(cliente_in: ClienteSignup, session: AsyncSession = Depe
     await session.refresh(db_cliente)
     return db_cliente
 
+
 # Login endpoint para Cliente
+class ClienteLogin(BaseModel):
+    username: str
+    pwd: str
+
 @router.post("/login", response_model=ClienteRead)
-async def cliente_login(username: str, pwd: str, session: AsyncSession = Depends(get_session)):
-    statement = select(Cliente).where(Cliente.username == username, Cliente.pwd == pwd)
+async def cliente_login(login: ClienteLogin, session: AsyncSession = Depends(get_session)):
+    statement = select(Cliente).where(Cliente.username == login.username, Cliente.pwd == login.pwd)
     result = await session.execute(statement)
     cliente = result.scalar_one_or_none()
     if not cliente:

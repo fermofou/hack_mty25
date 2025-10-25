@@ -26,12 +26,17 @@ export default function LoginPage() {
     try {
       const apiUrl = import.meta.env.VITE_API_URL;
       try {
-        const { data } = await axios.post(`${apiUrl}/clientes/login`, {
-          username,
-          pwd: password,
-        });
-        console.log("fuck", data);
+        const { data } = await axios.post(
+          `${apiUrl}/clientes/login`,
+          { username, pwd: password },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
         // You may want to store user info/token here
+        console.log("login successful", data);
         navigate('/user/dashboard');
       } catch (err: any) {
         console.log("broke with username:", username, "password:", password);
@@ -42,7 +47,6 @@ export default function LoginPage() {
         }
       }
     } catch (err) {
-      console.log("brok 2 with username:", username, "password:", password);
       setError('No se pudo conectar al servidor');
     } finally {
       setIsLoading(false);
