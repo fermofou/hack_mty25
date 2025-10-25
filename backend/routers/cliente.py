@@ -14,11 +14,27 @@ from models.item import Item
 router = APIRouter(prefix="/clientes", tags=["Clientes"])
 
 
-# Endpoint to get monthly expenses by category over the last 12 months
-@router.get("/{cliente_id}/monthly_expenses", tags=["Transacciones"])
-async def get_monthly_expenses(
-    cliente_id: int, session: AsyncSession = Depends(get_session)
-):
+# Endpoint to get all transactions of a user the last 12 months
+async def get_12months_transactions(
+    cliente_id: int, session: AsyncSession
+) -> List[Transaccion]:
+    """
+    Helper function to retrieve all transactions for a client in the last 12 months.
+    """
+    today = datetime.now()
+    twelve_months_ago = today - timedelta(days=365)
+
+    # Get all transactions from the last 12 months
+    statement = select(Transaccion).where(
+        Transaccion.cliente_id == cliente_id, Transaccion.fecha >= twelve_months_ago
+    )
+    result = await session.execute(statement)
+    transacciones = result.scalars().all()
+    return transacciones
+
+
+# Get average monthly expenses by category over the last 12 months
+async def get_average_monthly_expenses(transactions: List[Transaccion]):
     """
     Returns monthly expenses by category for the last 12 months.
 
@@ -36,20 +52,10 @@ async def get_monthly_expenses(
         ...
     }
     """
-    today = datetime.now()
-    twelve_months_ago = today - timedelta(days=365)
-
-    # Get all transactions from the last 12 months
-    statement = select(Transaccion).where(
-        Transaccion.cliente_id == cliente_id, Transaccion.fecha >= twelve_months_ago
-    )
-    result = await session.execute(statement)
-    transacciones = result.scalars().all()
-
     # Organize expenses by category and month
     expenses_by_category = {}
 
-    for t in transacciones:
+    for t in transactions:
         if t.categoria:
             # Format month as YYYY-MM
             month_key = t.fecha.strftime("%Y-%m")
@@ -80,6 +86,75 @@ async def get_monthly_expenses(
         }
 
     return response
+
+
+@router.get("/{cliente_id}/monthly_stats", tags=["Transacciones"])
+async def get_monthly_stats(
+    cliente_id: int, session: AsyncSession = Depends(get_session)
+):
+    transactions = await get_12months_transactions(cliente_id, session)
+    average_monthly_expenses = await get_average_monthly_expenses(transactions)
+
+    # Get all accepted credits for the client
+    statement = select(Credito).where(
+        Credito.cliente_id == cliente_id, Credito.estado == "ACEPTADO"
+    )
+    result = await session.execute(statement)
+    creditos = result.scalars().all()
+
+    # Define category groups (Spanish names only)
+    electricity_categories = ["LUZ"]
+    transport_categories = ["TRANSPORTE"]
+    water_categories = ["AGUA"]
+
+    # Calculate savings PER MONTH
+    money_savings = 0.0
+    co2_savings = 0.0
+    liters_savings = 0.0
+
+    for credito in creditos:
+        if credito.categoria:
+            categoria_upper = credito.categoria.upper()
+            # Money savings is the difference between initial and final monthly expenses
+            monthly_saving = credito.gasto_inicial_mes - credito.gasto_final_mes
+
+            # Money savings (for WATER, ENERGY/LIGHT, and TRANSPORT)
+            if (
+                categoria_upper in electricity_categories
+                or categoria_upper in transport_categories
+                or categoria_upper in water_categories
+            ):
+                money_savings += monthly_saving
+
+            # CO2 savings (only for LIGHT and TRANSPORT)
+            if categoria_upper in electricity_categories:
+                # 0.219 kg CO2 per MXN for electricity
+                co2_savings += monthly_saving * 0.219
+            elif categoria_upper in transport_categories:
+                # 0.0985 kg CO2 per MXN for transport
+                co2_savings += monthly_saving * 0.0985
+
+            # Water savings (only for WATER category)
+            if categoria_upper in water_categories:
+                # Determine water savings based on initial expense ranges
+                if credito.gasto_inicial_mes < 100:
+                    # Low consumption: 1 MXN ≈ 155 liters
+                    liters_savings += monthly_saving * 155
+                elif credito.gasto_inicial_mes <= 800:
+                    # Medium consumption: 1 MXN ≈ 13 liters
+                    liters_savings += monthly_saving * 13
+                else:
+                    # High consumption: 1 MXN ≈ 9 liters
+                    liters_savings += monthly_saving * 9
+
+    return {
+        "average_monthly_expenses": average_monthly_expenses,
+        "current_monthly_savings": {
+            "money": round(money_savings, 2),
+            "co2": round(co2_savings, 2),
+            "liters": round(liters_savings, 2),
+        },
+    }
 
 
 # Endpoint para cambiar el estado de un crédito a ACEPTADO
