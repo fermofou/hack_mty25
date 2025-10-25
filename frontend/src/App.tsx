@@ -6,6 +6,8 @@ import UserDashboard from './pages/UserDashboard';
 import CreditsDashboard from './pages/CreditsDashboard';
 import AdminPage from './pages/AdminPage';
 import ApplyCreditPage from './pages/ApplyCreditPage';
+import AdminCredits from './pages/AdminCredits';
+import AdminAnalisis from './pages/AdminAnalisis';
 import CreditDetailPage from './pages/CreditDetailPage';
 
 function App() {
@@ -16,6 +18,8 @@ function App() {
           <Route path='/' element={<LoginPage />} />
           <Route path='/admin' element={<LoginPageAdmin />} />
           <Route path='/admin/dashboard' element={<AdminPage />} />
+          <Route path='/admin/credits' element={<AdminCredits />} />
+          <Route path='/admin/analysis' element={<AdminAnalisis />} />
           <Route path='/user/dashboard' element={<UserDashboard />} />
           <Route path='/user/credits' element={<CreditsDashboard />} />
           <Route

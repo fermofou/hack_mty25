@@ -6,8 +6,8 @@ import urllib.parse
 import json
 import re
 import os
-from typing import List, Optional
-from models.products import ProductResponse
+from typing import List
+from models.gemini import ProductData
 
 router = APIRouter(prefix="/productos", tags=["Productos"])
 
@@ -55,17 +55,16 @@ def search_products(query, page=1, country="mx"):
     conn.request("POST", "/shopping", payload, headers)
     res = conn.getresponse()
     data = res.read()
-    print("data", data)
 
     products_data = json.loads(data.decode("utf-8")).get("products", [])
-    print("products_data", products_data)
 
-    simplified_products: List[ProductResponse] = [
-        ProductResponse(
+    simplified_products: List[ProductData] = [
+        ProductData(
             nombre=p.get("title", ""),
             link=p.get("link", ""),
             img_link=p.get("imageUrl", ""),
             precio=parse_price(p.get("price", "")),
+            categoria="Luz",  # TODO: Just a placeholder
         )
         for p in products_data[:20]
     ]
@@ -75,7 +74,7 @@ def search_products(query, page=1, country="mx"):
     return simplified_products
 
 
-@router.get("/buscar/", response_model=List[ProductResponse])
+@router.get("/buscar/", response_model=List[ProductData])
 async def search_products_endpoint(query: str, page: int = 1, country: str = "mx"):
     """
     Search for products using the external API.
