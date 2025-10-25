@@ -26,7 +26,10 @@ engine = create_async_engine(
     connect_args={"ssl": ssl_context},
 )
 
-AsyncSessionLocal = sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
+AsyncSessionLocal = sessionmaker(
+    bind=engine, expire_on_commit=False, class_=AsyncSession
+)
+
 
 async def get_session():
     async with AsyncSessionLocal() as session:

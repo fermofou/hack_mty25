@@ -4,7 +4,6 @@ Gemini API Integration
 
 import google.generativeai as genai
 import os
-from typing import Optional, List
 from pydantic import BaseModel
 from dotenv import load_dotenv
 

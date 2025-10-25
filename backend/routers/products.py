@@ -7,15 +7,10 @@ import json
 import re
 import os
 from typing import List, Optional
-from pydantic import BaseModel
+from models.products import ProductResponse
 
 router = APIRouter(prefix="/productos", tags=["Productos"])
 
-class ProductoResponse(BaseModel):
-    nombre: str
-    link: str
-    img_link: str
-    precio: Optional[float]
 
 def parse_price(price_str):
     """
@@ -37,25 +32,24 @@ def parse_price(price_str):
     except ValueError:
         return None
 
-def buscar_productos(query, page=1, country="mx"):
+
+def search_products(query, page=1, country="mx"):
     # Use certifi's CA bundle for SSL verification
     context = ssl.create_default_context(cafile=certifi.where())
-    conn = http.client.HTTPSConnection("product-search-api.p.rapidapi.com", context=context)
+    conn = http.client.HTTPSConnection(
+        "product-search-api.p.rapidapi.com", context=context
+    )
 
-    payload = urllib.parse.urlencode({
-        "query": query,
-        "page": page,
-        "country": country
-    })
+    payload = urllib.parse.urlencode({"query": query, "page": page, "country": country})
 
     rapidapi_key = os.environ.get("RAPIDAPI_KEY")
     if not rapidapi_key:
         raise RuntimeError("RAPIDAPI_KEY not set in environment variables")
 
     headers = {
-        'x-rapidapi-key': rapidapi_key,
-        'x-rapidapi-host': "product-search-api.p.rapidapi.com",
-        'Content-Type': "application/x-www-form-urlencoded"
+        "x-rapidapi-key": rapidapi_key,
+        "x-rapidapi-host": "product-search-api.p.rapidapi.com",
+        "Content-Type": "application/x-www-form-urlencoded",
     }
 
     conn.request("POST", "/shopping", payload, headers)
@@ -69,24 +63,21 @@ def buscar_productos(query, page=1, country="mx"):
             "nombre": p.get("title", ""),
             "link": p.get("link", ""),
             "img_link": p.get("imageUrl", ""),
-            "precio": parse_price(p.get("price", ""))
+            "precio": parse_price(p.get("price", "")),
         }
         for p in products_data[:20]
     ]
 
     return simplified_products
 
-@router.get("/buscar/", response_model=List[ProductoResponse])
-async def buscar_productos_endpoint(
-    query: str,
-    page: int = 1,
-    country: str = "mx"
-):
+
+@router.get("/buscar/", response_model=List[ProductResponse])
+async def search_products_endpoint(query: str, page: int = 1, country: str = "mx"):
     """
-    Busca productos usando la API externa.
-    
-    - **query**: Término de búsqueda
-    - **page**: Número de página (por defecto 1)
-    - **country**: País de búsqueda (por defecto "mx")
+    Search for products using the external API.
+
+    - **query**: Search term
+    - **page**: Page number (default 1)
+    - **country**: Search country (default "mx")
     """
-    return buscar_productos(query, page, country)
+    return search_products(query, page, country)
