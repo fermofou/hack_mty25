@@ -141,6 +141,46 @@ export default function ApplyCreditPage() {
                     key={idx}
                     offer={offer}
                     onClick={() => setSelectedOffer(offer)}
+                    onRequestCredit={async () => {
+                      // 1. Create item
+                      const itemPayload = {
+                        nombre: offer.product.nombre,
+                        precio: offer.product.precio,
+                        link: offer.product.link,
+                        img_link: offer.product.img_link,
+                        categoria: offer.product.categoria,
+                      };
+                      let itemId = null;
+                      try {
+                        const itemRes = await api.post("/items/", itemPayload);
+                        itemId = itemRes.data.id;
+                      } catch (e) {
+                        alert("Error creando el producto (item)");
+                        return;
+                      }
+                      // 2. Create credito
+                      const creditoPayload = {
+                        prestamo: offer.prestamo,
+                        interes: offer.interes,
+                        meses_originales: offer.meses_originales,
+                        deuda_acumulada: 0,
+                        pagado: 0,
+                        categoria: offer.product.categoria,
+                        estado: "PENDIENTE",
+                        descripcion: offer.descripcion,
+                        gasto_inicial_mes: offer.gasto_inicial_mes,
+                        gasto_final_mes: offer.gasto_final_mes,
+                        cliente_id: user.id,
+                        item_id: itemId,
+                        // id_cred and fecha_inicio are set by backend
+                      };
+                      try {
+                        await api.post("/creditos/", creditoPayload);
+                        alert("¡Crédito solicitado exitosamente!");
+                      } catch (e) {
+                        alert("Error solicitando el crédito");
+                      }
+                    }}
                   />
                 ))}
                 {selectedOffer && (
