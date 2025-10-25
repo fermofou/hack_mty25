@@ -1,3 +1,4 @@
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
@@ -6,9 +7,74 @@ from sqlmodel import select
 from config import get_session
 from models.credito import Credito, CreditoCreate, CreditoRead, CreditoUpdate
 from models.item import Item
-from models.cliente import Cliente
+from models.cliente import Cliente, ClienteRead
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/creditos", tags=["Creditos"])
+
+
+# Endpoint para pagar parte de un crédito
+class PagoCreditoRequest(BaseModel):
+    credito_id: int
+    cliente_id: int
+    monto: float
+
+@router.post("/pagar")
+async def pagar_credito(pago: PagoCreditoRequest, session: AsyncSession = Depends(get_session)):
+    """
+    Permite a un cliente pagar parte de un crédito.
+    Valida que el cliente tenga saldo suficiente y que no pague más de lo que debe.
+    Devuelve el crédito y el cliente actualizados.
+    """
+    print("1")
+    # Obtener crédito
+    credito = await session.get(Credito, pago.credito_id)
+    if not credito or credito.cliente_id != pago.cliente_id:
+        raise HTTPException(status_code=404, detail="Crédito no encontrado para este cliente")
+    # Obtener cliente
+    cliente = await session.get(Cliente, pago.cliente_id)
+    if not cliente:
+        print("2")
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    # Validar monto
+    print("3")
+    if pago.monto <= 0:
+        print("4")
+        raise HTTPException(status_code=400, detail="El monto debe ser mayor a cero")
+    if cliente.saldo < pago.monto:
+        print("5")
+        raise HTTPException(status_code=400, detail="Fondos insuficientes")
+    print("6")
+    monto_restante = credito.prestamo - credito.pagado
+    if pago.monto > monto_restante:
+        print("7")
+        raise HTTPException(status_code=400, detail="No puedes pagar más de lo que debes del crédito")
+    # Realizar pago
+    print("8")
+    # Usar SQL directo para evitar deadlocks ORM
+    from sqlalchemy import update
+    print("9")
+    await session.execute(
+        update(Cliente)
+        .where(Cliente.id == pago.cliente_id)
+        .values(saldo=cliente.saldo - pago.monto)
+    )
+    await session.execute(
+        update(Credito)
+        .where(Credito.id_cred == pago.credito_id)
+        .values(pagado=credito.pagado + pago.monto)
+    )
+    print("10")
+    await session.commit()
+    print("11")
+    # Refrescar desde base de datos
+    cliente = await session.get(Cliente, pago.cliente_id)
+    credito = await session.get(Credito, pago.credito_id)
+    print("12")
+    return {
+        "credito": CreditoRead.model_validate(credito).model_dump(),
+        "cliente": ClienteRead.model_validate(cliente).model_dump()
+    }
 
 @router.post("/", response_model=CreditoRead, tags=["Creditos"])
 async def create_credito(
