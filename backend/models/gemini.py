@@ -16,14 +16,6 @@ class ChatResponseType(BaseModel):
     object_in_response: str
 
 
-class MessageRequest(BaseModel):
-    """
-    Model to receive user messages in the processing endpoint.
-    """
-
-    message: str
-
-
 class ChatMessageResponse(BaseModel):
     """
     Response model when the message is of type 'credit' ro 'text'.

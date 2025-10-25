@@ -2,6 +2,7 @@ from typing import List, Optional
 from datetime import date
 from sqlmodel import SQLModel, Field, Relationship
 
+
 class ClienteBase(SQLModel):
     nombre: str
     apellido: str
@@ -12,17 +13,21 @@ class ClienteBase(SQLModel):
     credit_score: Optional[float] = Field(default=None, ge=0, le=1)
     ciudad: Optional[str] = None
 
+
 class Cliente(ClienteBase, table=True):
     __tablename__ = "clientes"
     id: Optional[int] = Field(default=None, primary_key=True)
     pwd: str
     creditos: List["Credito"] = Relationship(back_populates="cliente")
 
+
 class ClienteCreate(ClienteBase):
     pwd: str
 
+
 class ClienteRead(ClienteBase):
     id: int
+
 
 class ClienteUpdate(SQLModel):
     nombre: Optional[str] = None

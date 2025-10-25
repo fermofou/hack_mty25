@@ -4,7 +4,6 @@ from sqlmodel import select
 from config import get_session
 from models.cliente import Cliente
 from models.transacciones import Transaccion
-from models.products import MessageRequest
 from models.gemini import GeminiRequest
 
 # Import from gemini module
@@ -60,7 +59,7 @@ async def gemini_chat_endpoint(
     return await get_conversation_context(request, session)
 
 
-async def process_message(message: MessageRequest) -> dict:
+async def process_message(message: GeminiRequest) -> dict:
     """
     Processes a user message by determining its type and responding appropriately.
     If type is 'text', returns a Gemini response.
@@ -106,7 +105,7 @@ async def process_message(message: MessageRequest) -> dict:
 
 
 @router.post("/process")
-async def process_message_endpoint(request: MessageRequest):
+async def process_message_endpoint(request: GeminiRequest):
     """
     Endpoint that receives a user message and:
     - Determines if it's a general inquiry (text) or about credits for green products (credit)
