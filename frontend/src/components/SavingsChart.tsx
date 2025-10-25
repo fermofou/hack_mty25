@@ -34,7 +34,7 @@ export const SavingsChart: React.FC<SavingsChartProps> = ({
   // Fixed dimensions that work well in the container
   const width = 500;
   const height = 260;
-  const padding = 45;
+  const padding = 55; // Increased from 45 to give more space for labels
   const chartWidth = width - 2 * padding;
   const chartHeight = height - 2 * padding;
 
@@ -81,7 +81,7 @@ export const SavingsChart: React.FC<SavingsChartProps> = ({
   return (
     <div className={`w-full ${className}`}>
       {/* Chart Container with proper sizing */}
-      <div className='w-full overflow-hidden'>
+      <div className='w-full px-2'>
         <svg
           width={width}
           height={height}
@@ -103,7 +103,7 @@ export const SavingsChart: React.FC<SavingsChartProps> = ({
                 opacity='0.5'
               />
               <text
-                x={padding - 10}
+                x={padding - 15}
                 y={line.y + 4}
                 textAnchor='end'
                 className='fill-gray-500 text-xs'
@@ -200,7 +200,8 @@ export const SavingsChart: React.FC<SavingsChartProps> = ({
             textAnchor='middle'
             className='fill-gray-800 text-base font-semibold transition-all duration-500'
           >
-            Ahorros Acumulados - {selectedCategory}
+            Ahorros Acumulados{' '}
+            {selectedCategory !== 'Total' && <>- {selectedCategory}</>}
           </text>
         </svg>
       </div>

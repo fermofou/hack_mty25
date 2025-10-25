@@ -81,11 +81,13 @@ export default function CreditsPage() {
                 <PreapprovedCreditCard
                   showDetailsInModal={true}
                   onApply={() => navigate('/user/apply')}
+                  onDismiss={() => console.log('Dismissed first offer')}
                   className='w-full'
                 />
                 <PreapprovedCreditCard
                   showDetailsInModal={true}
                   onApply={() => navigate('/user/apply')}
+                  onDismiss={() => console.log('Dismissed second offer')}
                   className='w-full'
                 />
               </div>

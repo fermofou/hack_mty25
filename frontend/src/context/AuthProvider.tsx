@@ -1,10 +1,10 @@
-import { useEffect, useState, type PropsWithChildren } from "react";
-import { AuthContext, type User, type Admin } from "./AuthContext";
-import { api } from "@/lib/api";
+import { useEffect, useState, type PropsWithChildren } from 'react';
+import { AuthContext, type User, type Admin } from './AuthContext';
+import { api } from '@/lib/api';
 
 export const AuthProvider = ({ children }: PropsWithChildren) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [admin, setAdmin] = useState<Admin | null>(null);
+  const [user, setUser] = useState<User | null | undefined>();
+  const [admin, setAdmin] = useState<Admin | null | undefined>();
 
   useEffect(() => {
     const loadUser = async (userId: number) => {
@@ -25,8 +25,8 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       }
     };
 
-    const userId = localStorage.getItem("userId");
-    const adminId = localStorage.getItem("adminId");
+    const userId = localStorage.getItem('userId');
+    const adminId = localStorage.getItem('adminId');
 
     if (userId) loadUser(Number(userId));
     if (adminId) loadAdmin(Number(adminId));
@@ -34,26 +34,26 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
   // Login helper: either user or admin
   const loginUser = async (username: string, pwd: string) => {
-    const { data } = await api.post<User>("/clientes/login", { username, pwd });
+    const { data } = await api.post<User>('/clientes/login', { username, pwd });
     setUser(data);
-    localStorage.setItem("userId", String(data.id));
+    localStorage.setItem('userId', String(data.id));
     setAdmin(null); // clear admin just in case
-    localStorage.removeItem("adminId");
+    localStorage.removeItem('adminId');
   };
 
   const loginAdmin = async (username: string, pwd: string) => {
-    const { data } = await api.post<Admin>("/admin/login", { username, pwd });
+    const { data } = await api.post<Admin>('/admin/login', { username, pwd });
     setAdmin(data);
-    localStorage.setItem("adminId", String(data.id_admin)); // use id_admin from response
+    localStorage.setItem('adminId', String(data.id_admin)); // use id_admin from response
     setUser(null);
-    localStorage.removeItem("userId");
+    localStorage.removeItem('userId');
   };
 
   const logout = () => {
     setUser(null);
     setAdmin(null);
-    localStorage.removeItem("userId");
-    localStorage.removeItem("adminId");
+    localStorage.removeItem('userId');
+    localStorage.removeItem('adminId');
   };
 
   return (

@@ -39,7 +39,7 @@ export function UserTopBar() {
                   onClick={() => item.href !== '#' && navigate(item.href)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
                     isActive
-                      ? 'bg-[#EB0029] text-white'
+                      ? 'text-[#EB0029]'
                       : 'text-[#586670] hover:text-[#EB0029] hover:bg-[#F6F6F6]'
                   }`}
                   style={{ fontFamily: 'Gotham, sans-serif', fontWeight: 500 }}
