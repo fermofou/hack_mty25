@@ -51,10 +51,10 @@ export default function AdminCredits() {
     // Load Banorte logo when component mounts
     const loadLogo = async () => {
       try {
-        const logoBase64 = await getSvgAsBase64('/images/banorte.svg');
+        const logoBase64 = await getSvgAsBase64("/images/banorte.svg");
         setBanorteLogo(logoBase64);
       } catch (error) {
-        console.error('Failed to load Banorte logo:', error);
+        console.error("Failed to load Banorte logo:", error);
       }
     };
     loadLogo();
@@ -716,9 +716,9 @@ export default function AdminCredits() {
                   <div className="text-center border-b-4 border-[#EB0029] pb-6 mb-8">
                     <div className="flex items-center justify-center gap-4 mb-4">
                       {banorteLogo && (
-                        <img 
-                          src={banorteLogo} 
-                          alt="Banorte Logo" 
+                        <img
+                          src={banorteLogo}
+                          alt="Banorte Logo"
                           className="w-16 h-16 object-contain"
                         />
                       )}
