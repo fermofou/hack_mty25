@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils';
 import React from 'react';
 
 interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -23,7 +24,7 @@ export function Badge({
 
   return (
     <div
-      className={`${baseClasses} ${variantClasses[variant]} ${className}`}
+      className={cn(`${baseClasses} ${variantClasses[variant]}`, className)}
       {...props}
     >
       {children}

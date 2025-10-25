@@ -9,7 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 export function UserTopBar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { logout: signout } = useAuth();
 
   const navItems = [
     { href: '/user/dashboard', label: 'Inicio', icon: Home },
@@ -19,7 +19,7 @@ export function UserTopBar() {
 
   const logout = () => {
     navigate('/');
-    login(null);
+    signout();
   };
 
   return (
@@ -39,7 +39,7 @@ export function UserTopBar() {
                   onClick={() => item.href !== '#' && navigate(item.href)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
                     isActive
-                      ? 'bg-[#EB0029] text-white'
+                      ? 'text-[#EB0029]'
                       : 'text-[#586670] hover:text-[#EB0029] hover:bg-[#F6F6F6]'
                   }`}
                   style={{ fontFamily: 'Gotham, sans-serif', fontWeight: 500 }}

@@ -1,5 +1,6 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "./Button";
 
 interface CreditOfferCardProps {
   offer: any;
@@ -8,12 +9,21 @@ interface CreditOfferCardProps {
 
 export const CreditOfferCard: React.FC<CreditOfferCardProps> = ({ offer, onClick }) => {
   return (
-    <Card className="w-80 border-2 border-[#EB0029] cursor-pointer hover:shadow-lg transition" onClick={onClick}>
-      <CardContent className="flex flex-col items-center p-4">
-        <img src={offer.product.img_link} alt={offer.product.nombre} className="h-32 object-contain mb-2" />
-        <h3 className="font-bold text-lg text-center mb-1">{offer.product.nombre}</h3>
-        <div className="text-sm mb-1">Monto: <span className="font-semibold">${offer.prestamo}</span></div>
-        <div className="text-sm mb-1">Interés: <span className="font-semibold">{offer.interes}%</span></div>
+    <Card
+      className="w-80 bg-white border-gray-200 shadow-lg overflow-hidden flex flex-col cursor-pointer hover:shadow-xl transition-all duration-200"
+      onClick={onClick}
+    >
+      <CardContent className="flex flex-col items-center p-6 gap-2">
+        <img src={offer.product.img_link} alt={offer.product.nombre} className="h-24 w-24 object-contain rounded-lg bg-white mb-2" />
+        <h3 className="text-lg font-semibold text-gray-900 text-center mb-1">{offer.product.nombre}</h3>
+        <div className="text-sm text-gray-700 mb-1">Monto: <span className="font-bold text-gray-900">${offer.prestamo}</span></div>
+        <div className="text-sm text-gray-700 mb-1">Interés: <span className="font-bold text-gray-900">{offer.interes}%</span></div>
+        <Button
+          variant="secondary"
+          className="border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-700 hover:text-gray-900 w-full mt-2 text-xs px-3 py-2"
+        >
+          Ver detalles
+        </Button>
       </CardContent>
     </Card>
   );
