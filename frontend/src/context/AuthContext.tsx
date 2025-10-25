@@ -14,6 +14,7 @@ export interface User {
 
 interface AuthContextType {
   user?: User | null;
+  // eslint-disable-next-line no-unused-vars
   login: (user: User | null) => void;
 }
 

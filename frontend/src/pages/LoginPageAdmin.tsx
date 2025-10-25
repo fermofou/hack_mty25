@@ -1,15 +1,13 @@
 import type React from 'react';
-
 import { useState } from 'react';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
-import BanorteLogo from '@/components/BanorteLogo';
 import { useNavigate } from 'react-router';
 import { AxiosError } from 'axios';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
-export default function LoginPage() {
+export default function LoginPageAdmin() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -24,17 +22,14 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const { data } = await api.post('clientes/login', {
+      const { data } = await api.post('admin/login', {
         username,
         pwd: password,
       });
       console.log(data);
-      navigate('/user/dashboard');
+      navigate('/admin/dashboard');
       login(data);
     } catch (err) {
-      console.log('broke with username:', username, 'password:', password);
-
-      // Type guard for axios errors
       if (err instanceof AxiosError) {
         if (err.response?.data?.detail) {
           setError(err.response.data.detail);
@@ -57,7 +52,7 @@ export default function LoginPage() {
           {/* <BanorteLogo className='mb-12' /> */}
 
           <h1 className='mb-2 text-3xl font-bold text-foreground'>
-            Bienvenido
+            Bienvenido Administrador
           </h1>
           <p className='mb-8 text-muted-foreground'>
             Ingresa tus credenciales para continuar
@@ -112,7 +107,7 @@ export default function LoginPage() {
       {/* Right side - Branding */}
       <div className='hidden lg:flex lg:w-1/2 bg-[#EB0029] items-center justify-center p-16'>
         <div className='text-center flex gap-4 flex-col'>
-          <BanorteLogo variant='white' />
+          <img src='images/logo_white.png' />
           <p className='text-xl text-white/90'>
             Gestiona tus créditos de forma simple y segura
           </p>

@@ -10,23 +10,13 @@ import {
   CardHeader,
   CardTitle,
 } from '../components/ui/card';
-import { mockTransactions, type TransactionCategory } from '../lib/mock-data';
-import {
-  ArrowDownLeft,
-  ArrowUpRightIcon,
-  BatteryCharging,
-  LeafIcon,
-  X,
-} from 'lucide-react';
-import { Badge } from '../components/ui/badge';
+import { BatteryCharging, LeafIcon, X } from 'lucide-react';
 import { Button } from '@/components/Button';
+import TransactionList from '@/components/TransactionList';
 
 export default function UserDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [selectedCategory, setSelectedCategory] = useState<
-    TransactionCategory | 'all'
-  >('all');
   const [isGreenCreditExpanded, setIsGreenCreditExpanded] = useState(false);
 
   useEffect(() => {
@@ -38,32 +28,6 @@ export default function UserDashboard() {
   if (!user) {
     return null;
   }
-
-  const userTransactions = mockTransactions.filter((t) => t.userId === user.id);
-  const filteredTransactions =
-    selectedCategory === 'all'
-      ? userTransactions
-      : userTransactions.filter((t) => t.category === selectedCategory);
-
-  const categories: { value: TransactionCategory | 'all'; label: string }[] = [
-    { value: 'all', label: 'Todas' },
-    { value: 'electricity', label: 'Electricidad' },
-    { value: 'transportation', label: 'Transporte' },
-    { value: 'water', label: 'Agua' },
-    { value: 'gas', label: 'Gas' },
-    { value: 'misc', label: 'Otros' },
-  ];
-
-  const getCategoryColor = (category: TransactionCategory) => {
-    const colors = {
-      electricity: 'bg-yellow-100 text-yellow-800',
-      transportation: 'bg-blue-100 text-blue-800',
-      water: 'bg-cyan-100 text-cyan-800',
-      gas: 'bg-orange-100 text-orange-800',
-      misc: 'bg-gray-100 text-gray-800',
-    };
-    return colors[category];
-  };
 
   return (
     <div className='min-h-screen bg-background'>
@@ -133,7 +97,8 @@ export default function UserDashboard() {
                     <p className='text-sm lg:text-base text-gray-700 leading-relaxed'>
                       Instala paneles solares en tu hogar y reduce tu factura de
                       luz hasta un{' '}
-                      <span className='font-semibold text-green-700'>90%</span>
+                      <span className='font-semibold text-green-700'>90%</span>{' '}
+                      en 60 meses.
                     </p>
                     <p className='text-base lg:text-lg font-bold text-green-700 mt-1 lg:mt-2'>
                       Hasta $100,000 disponibles
@@ -161,6 +126,20 @@ export default function UserDashboard() {
               }`}
             >
               <div className='space-y-3 lg:space-y-4 pt-2'>
+                <div className='bg-white rounded-lg p-4 border border-green-200'>
+                  <div className='flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4'>
+                    <div className='flex-1'>
+                      <p className='text-sm lg:text-base text-gray-700 leading-relaxed'>
+                        Con un crédito verde puedes instalar paneles solares sin
+                        afectar tu presupuesto. Pagarías una mensualidad similar
+                        a la que ya destinas a la luz, mientras reduces el
+                        consumo de la red y mejoras la eficiencia energética de
+                        tu hogar.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Credit details grid */}
                 <div className='grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4'>
                   <div className='bg-white rounded-lg p-2 lg:p-3 text-center border border-green-200 transform transition-transform duration-300 hover:scale-105'>
@@ -180,7 +159,9 @@ export default function UserDashboard() {
                     </div>
                   </div>
                   <div className='bg-white rounded-lg p-2 lg:p-3 text-center border border-green-200 transform transition-transform duration-300 hover:scale-105'>
-                    <div className='text-lg lg:text-2xl font-bold text-green-700'>60</div>
+                    <div className='text-lg lg:text-2xl font-bold text-green-700'>
+                      60
+                    </div>
                     <div className='text-xs text-green-600 font-medium'>
                       Meses máx.
                     </div>
@@ -236,104 +217,7 @@ export default function UserDashboard() {
           </CardContent>
         </Card>
 
-        <div className='mb-8'>
-          <div className='flex items-center justify-between mb-4'>
-            <h2 className='text-xl font-semibold'>Transacciones recientes</h2>
-          </div>
-
-          {/* Category filters */}
-          <div className='flex flex-wrap gap-2 mb-4'>
-            {categories.map((cat) => (
-              <button
-                key={cat.value}
-                onClick={() => setSelectedCategory(cat.value)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  selectedCategory === cat.value
-                    ? 'bg-[#EB0029] text-white'
-                    : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-
-          <Card>
-            <CardContent className='p-0'>
-              <div className='divide-y'>
-                {filteredTransactions.length === 0 ? (
-                  <div className='p-8 text-center text-muted-foreground'>
-                    No hay transacciones en esta categoría
-                  </div>
-                ) : (
-                  filteredTransactions.map((transaction) => (
-                    <div
-                      key={transaction.id}
-                      className='flex items-center justify-between p-4 hover:bg-secondary/50'
-                    >
-                      <div className='flex items-center gap-4'>
-                        <div
-                          className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                            transaction.type === 'credit'
-                              ? 'bg-[#6CC04A]/10'
-                              : 'bg-[#EB0029]/10'
-                          }`}
-                        >
-                          {transaction.type === 'credit' ? (
-                            <ArrowUpRightIcon className='h-5 w-5 text-[#6CC04A]' />
-                          ) : (
-                            <ArrowDownLeft className='h-5 w-5 text-[#EB0029]' />
-                          )}
-                        </div>
-                        <div>
-                          <p className='font-medium'>
-                            {transaction.description}
-                          </p>
-                          <div className='flex items-center gap-2 mt-1'>
-                            <p className='text-xs text-muted-foreground'>
-                              {new Date(transaction.date).toLocaleDateString(
-                                'es-MX',
-                                {
-                                  day: 'numeric',
-                                  month: 'short',
-                                  year: 'numeric',
-                                }
-                              )}
-                            </p>
-                            <Badge
-                              variant='secondary'
-                              className={`text-xs ${getCategoryColor(
-                                transaction.category
-                              )}`}
-                            >
-                              {
-                                categories.find(
-                                  (c) => c.value === transaction.category
-                                )?.label
-                              }
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        className={`text-lg font-semibold ${
-                          transaction.type === 'credit'
-                            ? 'text-[#6CC04A]'
-                            : 'text-foreground'
-                        }`}
-                      >
-                        {transaction.type === 'credit' ? '+' : ''}$
-                        {Math.abs(transaction.amount).toLocaleString('es-MX', {
-                          minimumFractionDigits: 2,
-                        })}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <TransactionList />
       </main>
     </div>
   );

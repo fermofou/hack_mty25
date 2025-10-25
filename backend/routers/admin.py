@@ -41,10 +41,16 @@ async def admin_signup(admin_in: AdminCreate, session: AsyncSession = Depends(ge
     await session.refresh(db_admin)
     return db_admin
 
-# Login endpoint para Admin
+# Login endpoint para Admin (ahora acepta JSON body igual que cliente)
+from pydantic import BaseModel
+
+class AdminLogin(BaseModel):
+    username: str
+    pwd: str
+
 @router.post("/login", response_model=AdminRead)
-async def admin_login(username: str, pwd: str, session: AsyncSession = Depends(get_session)):
-    statement = select(Admin).where(Admin.username == username, Admin.pwd == pwd)
+async def admin_login(login: AdminLogin, session: AsyncSession = Depends(get_session)):
+    statement = select(Admin).where(Admin.username == login.username, Admin.pwd == login.pwd)
     result = await session.execute(statement)
     admin = result.scalar_one_or_none()
     if not admin:
