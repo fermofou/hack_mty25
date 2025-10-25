@@ -27,13 +27,6 @@ export const CreditOfferCard: React.FC<CreditOfferCardProps> = ({ offer, onClick
           >
             Ver detalles
           </Button>
-          <Button
-            variant="primary"
-            className="flex-1 text-xs px-3 py-2"
-            onClick={(e) => { e.stopPropagation(); onRequestCredit && onRequestCredit(); }}
-          >
-            Pedir crédito
-          </Button>
         </div>
       </CardContent>
     </Card>

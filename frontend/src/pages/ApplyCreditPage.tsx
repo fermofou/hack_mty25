@@ -120,7 +120,14 @@ export default function ApplyCreditPage() {
                         key={idx}
                         offer={offer}
                         onClick={() => setSelectedOffer(offer)}
+                      />
+                    ))}
+                    {selectedOffer && (
+                      <CreditOfferModal
+                        offer={selectedOffer}
+                        onClose={() => setSelectedOffer(null)}
                         onRequestCredit={async () => {
+                          const offer = selectedOffer;
                           // 1. Create item
                           const itemPayload = {
                             nombre: offer.product.nombre,
@@ -134,7 +141,7 @@ export default function ApplyCreditPage() {
                             const itemRes = await api.post("/items/", itemPayload);
                             itemId = itemRes.data.id;
                           } catch (e) {
-                            alert("Error creando el producto (item)");
+                            toast.error("Error creando el producto (item)");
                             return;
                           }
                           // 2. Create credito
@@ -161,9 +168,6 @@ export default function ApplyCreditPage() {
                           }
                         }}
                       />
-                    ))}
-                    {selectedOffer && (
-                      <CreditOfferModal offer={selectedOffer} onClose={() => setSelectedOffer(null)} />
                     )}
                   </div>
                 );

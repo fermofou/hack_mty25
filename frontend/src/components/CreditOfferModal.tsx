@@ -1,13 +1,16 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 
+import { Button } from "./Button";
+
 interface CreditOfferModalProps {
   offer: any;
   onClose: () => void;
+  onRequestCredit?: () => void;
 }
 
 
-export const CreditOfferModal: React.FC<CreditOfferModalProps> = ({ offer, onClose }) => {
+export const CreditOfferModal: React.FC<CreditOfferModalProps> = ({ offer, onClose, onRequestCredit }) => {
   if (!offer) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -53,6 +56,13 @@ export const CreditOfferModal: React.FC<CreditOfferModalProps> = ({ offer, onClo
               </div>
             </div>
             <a href={offer.product.link} target="_blank" rel="noopener noreferrer" className="text-gray-700 underline mt-2 font-semibold">Ver producto</a>
+            <Button
+              variant="primary"
+              className="w-full mt-6 text-base py-3"
+              onClick={() => onRequestCredit && onRequestCredit()}
+            >
+              Pedir crédito
+            </Button>
           </CardContent>
         </Card>
       </div>
