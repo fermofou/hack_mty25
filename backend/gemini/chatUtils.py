@@ -1,5 +1,5 @@
 from .baseGeminiQueries import gemini_structured_response
-from models.gemini import ChatResponseType
+from models.gemini import ChatResponseType, CreditOffer, CreditOffers
 
 
 def determine_response_type(message: str) -> ChatResponseType:
@@ -24,6 +24,82 @@ def determine_response_type(message: str) -> ChatResponseType:
       Respond with a JSON object with two fields: 'response_type' indicating the type, and 'object_in_response' containing the specific object mentioned (or empty string if none).
     """
     return gemini_structured_response(prompt, ChatResponseType)
+
+
+def create_credit_offers(conversation_context: str) -> list[CreditOffer]:
+    prompt = f"""
+    You are a financial advisor specializing in green financing and sustainable products. Based on the conversation context provided, generate realistic credit offers for green products that help reduce environmental impact.
+    
+    IMPORTANT GUIDELINES FOR REALISTIC OFFERS:
+    1. LOAN AMOUNTS (prestamo):
+       - Base the loan amount on realistic market prices for the mentioned products in Mexican pesos (MXN)
+       - Consider the user's financial capacity based on their transaction history and balance
+       - All prices are in MXN pesos
+    
+    2. INTEREST RATES (interes):
+       - Use competitive green loan rates: typically 3.5% to 8.5% annual rate
+       - Lower rates for better credit scores and shorter terms
+       - Green products often qualify for preferential rates
+    
+    3. LOAN TERMS (meses_originales):
+       - Match term to product lifespan and loan amount
+       - Small purchases ($9,000-$54,000 MXN): 12-36 months
+       - Medium purchases ($54,000-$270,000 MXN): 24-60 months
+       - Large purchases ($270,000+ MXN): 36-120 months
+    
+    4. DESCRIPTIONS (descripcion):
+       - Be specific about the product and its environmental benefits
+       - Mention concrete savings and payback period if applicable
+       - Include relevant product specifications or capacity
+       - ONLY 1 SENTENCE. DO NOT MAKE IT LONG.
+    
+    5. PROJECTED SAVINGS:
+       - Calculate accurate savings based on product specifications:
+         * Solar panels: 40-70% reduction in electricity bills
+         * LED bulbs: 75-80% reduction in lighting costs
+         * High-efficiency appliances: 20-50% reduction in related utility costs
+         * Electric vehicles: 60-80% reduction in fuel costs
+    
+    6. INITIAL MONTHLY EXPENSE (gasto_inicial_mes):
+       - This is the AVERAGE monthly expense the user is currently paying for the specific category
+       - Calculate from user's transaction history over the last 12 months
+       - Examples:
+         * For solar panels: average monthly electricity bill
+         * For electric vehicle: average monthly gasoline/fuel expenses
+         * For energy-efficient appliances: average monthly expense on related utility (electricity for refrigerator, water for washing machine, etc.)
+         * For LED bulbs: average monthly lighting/electricity costs
+       - Use actual transaction data from the conversation context
+       - Express in MXN pesos
+    
+    7. FINAL MONTHLY EXPENSE (gasto_final_mes):
+       - This is the EXPECTED monthly expense AFTER implementing the purchased product
+       - DO NOT include the credit payment in this calculation
+       - Only calculate the reduced utility/operational cost
+       - Examples:
+         * For solar panels: new expected electricity bill (30-60% of gasto_inicial_mes)
+         * For electric vehicle: new expected charging costs (20-40% of previous fuel costs)
+         * For energy-efficient appliance: new expected utility cost (50-80% of previous cost)
+         * For LED bulbs: new expected lighting costs (20-25% of previous costs)
+       - This shows the pure savings benefit, independent of the loan
+       - Express in MXN pesos
+    
+    ANALYSIS REQUIREMENTS:
+    - Review the user's transaction history to identify current spending patterns
+    - Match credit offers to products that address their highest utility expenses
+    - Ensure monthly payments are affordable (typically 20-35% of monthly income)
+    - Show realistic ROI and payback periods
+    - Generate 3 offers with varying terms and amounts
+        
+    ---------
+    CONVERSATION CONTEXT:
+    {conversation_context}
+    
+    ---------
+    INSTRUCTIONS:
+    Respond with a JSON array of 3 realistic credit offer objects. Each offer should be financially sound and tailored to the user's actual situation and needs.
+    """
+
+    return gemini_structured_response(prompt, CreditOffers)
 
 
 if __name__ == "__main__":
