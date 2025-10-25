@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { UserTopBar } from "@/components/UserTopBar";
@@ -24,10 +24,10 @@ export default function ApplyCreditPage() {
     },
   ]);
   const [input, setInput] = useState("");
-
   const [isLoading, setIsLoading] = useState(false);
   const [creditOffers, setCreditOffers] = useState<any[] | null>(null);
   const [selectedOffer, setSelectedOffer] = useState<any | null>(null);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   // Build conversation_context string from messages
   const buildConversationContext = (msgs: Message[]) => {
@@ -40,6 +40,10 @@ export default function ApplyCreditPage() {
       .join("\n");
   };
 
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   if (!user) {
     return null;
   }
@@ -50,10 +54,10 @@ export default function ApplyCreditPage() {
     const userMessage: Message = { role: "user", content: input };
     const newMessages = [...messages, userMessage];
 
-  setMessages(newMessages);
-  setInput(""); // Clear input immediately
-  setIsLoading(true);
-  setCreditOffers(null);
+    setMessages(newMessages);
+    setInput(""); // Clear input immediately
+    setIsLoading(true);
+    setCreditOffers(null);
 
     try {
       const conversation_context = buildConversationContext(newMessages);
@@ -190,6 +194,8 @@ export default function ApplyCreditPage() {
                 )}
               </div>
             )}
+            {/* Scroll anchor must be the very last child */}
+            <div ref={chatEndRef} />
           </CardContent>
 
           {/* Input area */}
