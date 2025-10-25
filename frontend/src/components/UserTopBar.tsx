@@ -1,6 +1,6 @@
 'use client';
 
-import { BanorteLogo } from './banorte-logo';
+import BanorteLogo from './BanorteLogo';
 import { Button } from './Button';
 import { useLocation, useNavigate } from 'react-router';
 import { Home, CreditCard, FileText, Leaf } from 'lucide-react';
@@ -11,9 +11,8 @@ export function UserTopBar() {
 
   const navItems = [
     { href: '/user/dashboard', label: 'Inicio', icon: Home },
-    { href: '/user/credits', label: 'Créditos Verdes', icon: Leaf },
     { href: '#', label: 'Créditos', icon: CreditCard },
-    { href: '/user/apply', label: 'Solicitar', icon: FileText },
+    { href: '/user/credits', label: 'Créditos Verdes', icon: Leaf },
   ];
 
   return (
