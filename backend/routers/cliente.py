@@ -7,8 +7,76 @@ from sqlmodel import select, or_
 from config import get_session
 from models.cliente import Cliente, ClienteCreate, ClienteRead, ClienteUpdate
 from models.transacciones import Transaccion, TransaccionRead
+from models.credito import Credito
+from models.item import Item
 
 router = APIRouter(prefix="/clientes", tags=["Clientes"])
+
+# Helper para armar la respuesta de créditos
+async def build_creditos_response(creditos, session):
+    response = []
+    for credito in creditos:
+        cliente = await session.get(Cliente, credito.cliente_id)
+        item = await session.get(Item, credito.item_id) if credito.item_id else None
+        response.append({
+            "credito": {
+                "prestamo": credito.prestamo,
+                "interes": credito.interes,
+                "meses_originales": credito.meses_originales,
+                "categoria": credito.categoria,
+                "descripcion": credito.descripcion,
+                "gasto_inicial_mes": credito.gasto_inicial_mes,
+                "gasto_final_mes": credito.gasto_final_mes
+            },
+            "cliente": {
+                "nombre": cliente.nombre,
+                "apellido": cliente.apellido,
+                "edad": cliente.edad,
+                "fecha_nacimiento": cliente.fecha_nacimiento,
+                "saldo": cliente.saldo,
+                "credit_score": cliente.credit_score
+            } if cliente else None,
+            "item": {
+                "nombre": item.nombre,
+                "link": item.link,
+                "img_link": item.img_link,
+                "precio": item.precio
+            } if item else None
+        })
+    return response
+
+# Endpoint para todos los créditos del usuario
+@router.get("/{cliente_id}/creditos", tags=["Creditos"])
+async def get_all_creditos_cliente(cliente_id: int, session: AsyncSession = Depends(get_session)):
+    statement = select(Credito).where(Credito.cliente_id == cliente_id)
+    result = await session.execute(statement)
+    creditos = result.scalars().all()
+    return await build_creditos_response(creditos, session)
+
+# Endpoint para créditos por estado
+def creditos_estado_endpoint(estado):
+    async def endpoint(cliente_id: int, session: AsyncSession = Depends(get_session)):
+        statement = select(Credito).where(Credito.cliente_id == cliente_id, Credito.estado == estado)
+        result = await session.execute(statement)
+        creditos = result.scalars().all()
+        return await build_creditos_response(creditos, session)
+    return endpoint
+
+@router.get("/{cliente_id}/creditos/aceptado", tags=["Creditos"])
+async def get_creditos_aceptado(cliente_id: int, session: AsyncSession = Depends(get_session)):
+    return await creditos_estado_endpoint("ACEPTADO")(cliente_id, session)
+
+@router.get("/{cliente_id}/creditos/aprovado", tags=["Creditos"])
+async def get_creditos_aprovado(cliente_id: int, session: AsyncSession = Depends(get_session)):
+    return await creditos_estado_endpoint("APROBADO")(cliente_id, session)
+
+@router.get("/{cliente_id}/creditos/negado", tags=["Creditos"])
+async def get_creditos_negado(cliente_id: int, session: AsyncSession = Depends(get_session)):
+    return await creditos_estado_endpoint("NEGADO")(cliente_id, session)
+
+@router.get("/{cliente_id}/creditos/pendiente", tags=["Creditos"])
+async def get_creditos_pendiente(cliente_id: int, session: AsyncSession = Depends(get_session)):
+    return await creditos_estado_endpoint("PENDIENTE")(cliente_id, session)
 
 # Signup endpoint para Cliente
 from datetime import date
