@@ -5,6 +5,7 @@ import certifi
 import urllib.parse
 import json
 import re
+import os
 from typing import List, Optional
 from pydantic import BaseModel
 
@@ -47,8 +48,12 @@ def buscar_productos(query, page=1, country="mx"):
         "country": country
     })
 
+    rapidapi_key = os.environ.get("RAPIDAPI_KEY")
+    if not rapidapi_key:
+        raise RuntimeError("RAPIDAPI_KEY not set in environment variables")
+
     headers = {
-        'x-rapidapi-key': "ae5dfb3c2amsh0245873f3cc2ae5p1dd10cjsn99b478674369",
+        'x-rapidapi-key': rapidapi_key,
         'x-rapidapi-host': "product-search-api.p.rapidapi.com",
         'Content-Type': "application/x-www-form-urlencoded"
     }
