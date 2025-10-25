@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { UserTopBar } from "@/components/UserTopBar";
 import { Button } from "@/components/Button";
@@ -13,7 +13,6 @@ interface Message {
 }
 
 export default function ApplyCreditPage() {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -23,63 +22,70 @@ export default function ApplyCreditPage() {
     },
   ]);
   const [input, setInput] = useState("");
-  const [step, setStep] = useState(0);
-  const [creditData, setCreditData] = useState({
-    purpose: "",
-    amount: "",
-    term: "",
-    income: "",
-  });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [creditOffers, setCreditOffers] = useState<any[] | null>(null);
+
+  // Build conversation_context string from messages
+  const buildConversationContext = (msgs: Message[]) => {
+    return msgs
+      .map((m) =>
+        m.role === "user"
+          ? `cliente: ${m.content}`
+          : `AI: ${m.content}`
+      )
+      .join("\n");
+  };
 
   if (!user) {
     return null;
   }
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
 
     const userMessage: Message = { role: "user", content: input };
-    setMessages((prev) => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
+    setIsLoading(true);
+    setCreditOffers(null);
 
-    setTimeout(() => {
-      let assistantResponse = "";
-
-      if (step === 0) {
-        setCreditData((prev) => ({ ...prev, purpose: input }));
-        assistantResponse = "Perfecto. ¿Cuánto dinero necesitas? Por favor ingresa el monto en pesos mexicanos.";
-        setStep(1);
-      } else if (step === 1) {
-        setCreditData((prev) => ({ ...prev, amount: input }));
-        assistantResponse = "Entendido. ¿En cuántos meses te gustaría pagar el crédito? (12, 24, 36, 48 o 60 meses)";
-        setStep(2);
-      } else if (step === 2) {
-        setCreditData((prev) => ({ ...prev, term: input }));
-        assistantResponse = "Excelente. Para finalizar, ¿cuál es tu ingreso mensual aproximado?";
-        setStep(3);
-      } else if (step === 3) {
-        setCreditData((prev) => ({ ...prev, income: input }));
-        assistantResponse = `Gracias por la información. He registrado tu solicitud de crédito:\n\n• Propósito: ${creditData.purpose}\n• Monto: $${creditData.amount}\n• Plazo: ${input} meses\n• Ingreso mensual: $${input}\n\nTu solicitud será revisada por nuestro equipo y recibirás una respuesta en 24-48 horas. ¿Deseas enviar la solicitud?`;
-        setStep(4);
-      } else if (step === 4) {
-        if (
-          input.toLowerCase().includes("sí") ||
-          input.toLowerCase().includes("si") ||
-          input.toLowerCase().includes("enviar")
-        ) {
-          assistantResponse =
-            "¡Solicitud enviada exitosamente! Puedes revisar el estado de tu solicitud en la sección 'Mis créditos'. Te notificaremos cuando haya una actualización.";
-          setTimeout(() => {
-            navigate("/user/credits");
-          }, 2000);
-        } else {
-          assistantResponse = "Entendido. Si deseas hacer cambios, puedes comenzar de nuevo o salir de esta página.";
-        }
+    try {
+      const conversation_context = buildConversationContext(newMessages);
+      const res = await api.post("/gemini/process", {
+        last_message: input,
+        conversation_context,
+        user_id: user.id || 0,
+      });
+      const data = res.data;
+      console.log("Gemini response:", data);
+      if (data.response_type === "text") {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: data.text_response }
+        ]);
+      } else if (data.response_type === "credit" && data.creditOffers?.creditOffers) {
+        setCreditOffers(data.creditOffers.creditOffers);
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: `Te recomiendo estas opciones de crédito para: ${data.object_in_response}` }
+        ]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: "No se pudo procesar la respuesta de la IA." }
+        ]);
       }
-
-      setMessages((prev) => [...prev, { role: "assistant", content: assistantResponse }]);
-    }, 500);
-
-    setInput("");
+    } catch (err) {
+      console.log("este fue el error", err);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Ocurrió un error al contactar a la IA." }
+      ]);
+    } finally {
+      setIsLoading(false);
+      setInput("");
+    }
   };
 
   return (
@@ -117,6 +123,33 @@ export default function ApplyCreditPage() {
                 )}
               </div>
             ))}
+            {isLoading && (
+              <div className="flex justify-center items-center py-8">
+                <svg className="animate-spin h-8 w-8 text-[#EB0029]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                </svg>
+              </div>
+            )}
+            {creditOffers && (
+              <div className="flex flex-row gap-4 justify-center mt-6">
+                {creditOffers.slice(0, 3).map((offer, idx) => (
+                  <Card key={idx} className="w-80 border-2 border-[#EB0029]">
+                    <CardContent className="flex flex-col items-center p-4">
+                      <img src={offer.product.img_link} alt={offer.product.nombre} className="h-32 object-contain mb-2" />
+                      <h3 className="font-bold text-lg text-center mb-1">{offer.product.nombre}</h3>
+                      <p className="text-sm text-center mb-2">{offer.descripcion}</p>
+                      <div className="text-sm mb-1">Monto: <span className="font-semibold">${offer.prestamo}</span></div>
+                      <div className="text-sm mb-1">Interés: <span className="font-semibold">{offer.interes}%</span></div>
+                      <div className="text-sm mb-1">Plazo: <span className="font-semibold">{offer.meses_originales} meses</span></div>
+                      <div className="text-sm mb-1">Pago inicial: <span className="font-semibold">${offer.gasto_inicial_mes}</span></div>
+                      <div className="text-sm mb-1">Pago final: <span className="font-semibold">${offer.gasto_final_mes}</span></div>
+                      <a href={offer.product.link} target="_blank" rel="noopener noreferrer" className="text-[#EB0029] underline mt-2">Ver producto</a>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </CardContent>
 
           {/* Input area */}

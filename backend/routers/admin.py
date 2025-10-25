@@ -48,14 +48,6 @@ class AdminLogin(BaseModel):
     username: str
     pwd: str
 
-@router.post("/login", response_model=AdminRead)
-async def admin_login(login: AdminLogin, session: AsyncSession = Depends(get_session)):
-    statement = select(Admin).where(Admin.username == login.username, Admin.pwd == login.pwd)
-    result = await session.execute(statement)
-    admin = result.scalar_one_or_none()
-    if not admin:
-        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
-    return admin
 
 @router.post("/", response_model=AdminRead, tags=["Admins"])
 async def create_admin(
@@ -72,6 +64,19 @@ async def create_admin(
     await session.refresh(db_admin)
     return db_admin
 
+
+@router.post("/login", response_model=AdminRead)
+async def admin_login(
+    login: AdminLogin, session: AsyncSession = Depends(get_session)
+):
+    statement = select(Admin).where(
+        Admin.username == login.username, Admin.pwd == login.pwd
+    )
+    result = await session.execute(statement)
+    admin = result.scalar_one_or_none()
+    if not admin:
+        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+    return admin
 
 @router.get("/", response_model=List[AdminRead], tags=["Admins"])
 async def read_admins(
