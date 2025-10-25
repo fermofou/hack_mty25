@@ -14,14 +14,7 @@ import {
   mockSavingsTimeline,
   categorySavingsData,
 } from '@/lib/mock-data';
-import {
-  Plus,
-  Leaf,
-  Clock,
-  DollarSign,
-  TrendingUp,
-  CreditCard,
-} from 'lucide-react';
+import { Leaf, Clock, DollarSign, TrendingUp, CreditCard } from 'lucide-react';
 
 export default function CreditsPage() {
   const navigate = useNavigate();
@@ -63,7 +56,10 @@ export default function CreditsPage() {
               Gestiona y revisa tus créditos sustentables
             </p>
           </div>
-          <Button variant='primary' onClick={() => navigate('/user/apply')}>
+          <Button
+            variant='primary'
+            onClick={() => navigate('/user/credits/apply')}
+          >
             Solicitar crédito
           </Button>
         </div>
@@ -104,7 +100,9 @@ export default function CreditsPage() {
                     <Card
                       key={credit.id}
                       className='cursor-pointer transition-shadow hover:shadow-lg'
-                      onClick={() => navigate(`/user/credits/${credit.id}`)}
+                      onClick={() =>
+                        navigate(`/user/credits/details/${credit.id}`)
+                      }
                     >
                       <CardContent className='p-6'>
                         <div className='flex items-start justify-between mb-4'>
@@ -116,7 +114,7 @@ export default function CreditsPage() {
                               {credit.purpose}
                             </p>
                           </div>
-                          <Badge className='bg-orange-600 text-white'>
+                          <Badge className='bg-[#FFA500] text-white'>
                             Pendiente
                           </Badge>
                         </div>
@@ -158,7 +156,9 @@ export default function CreditsPage() {
                     <Card
                       key={credit.id}
                       className='cursor-pointer transition-shadow hover:shadow-lg'
-                      onClick={() => navigate(`/user/credits/${credit.id}`)}
+                      onClick={() =>
+                        navigate(`/user/credits/details/${credit.id}`)
+                      }
                     >
                       <CardHeader>
                         <div className='flex items-start justify-between'>
@@ -258,7 +258,7 @@ export default function CreditsPage() {
                     </p>
                     <Button
                       variant='primary'
-                      onClick={() => navigate('/user/apply')}
+                      onClick={() => navigate('/user/credits/apply')}
                     >
                       Solicitar tu primer crédito
                     </Button>
