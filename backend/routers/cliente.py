@@ -5,6 +5,7 @@ from sqlmodel import select
 
 from config import get_session
 from models.cliente import Cliente, ClienteCreate, ClienteRead, ClienteUpdate
+from models.transacciones import Transaccion, TransaccionRead
 
 router = APIRouter(prefix="/clientes", tags=["Clientes"])
 
@@ -56,3 +57,13 @@ async def delete_cliente(cliente_id: int, session: AsyncSession = Depends(get_se
     await session.delete(db_cliente)
     await session.commit()
     return {"ok": True, "detail": "Cliente eliminado"}
+
+
+# Endpoint para obtener todas las transacciones de un cliente
+@router.get("/{cliente_id}/transacciones", response_model=List[TransaccionRead])
+async def get_transacciones_cliente(cliente_id: int, session: AsyncSession = Depends(get_session)):
+    """Devuelve todas las transacciones correspondientes a un cliente específico."""
+    statement = select(Transaccion).where(Transaccion.cliente_id == cliente_id)
+    result = await session.execute(statement)
+    transacciones = result.scalars().all()
+    return transacciones
