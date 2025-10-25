@@ -13,8 +13,8 @@ export interface User {
 }
 
 interface AuthContextType {
-  user?: User;
-  setUser: React.Dispatch<React.SetStateAction<User | undefined>>;
+  user?: User | null;
+  login: (user: User | null) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(

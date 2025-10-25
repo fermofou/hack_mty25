@@ -14,7 +14,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const { setUser } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,7 +29,7 @@ export default function LoginPage() {
       });
       console.log(data);
       navigate('/user/dashboard');
-      setUser(data);
+      login(data);
     } catch (err) {
       console.log('broke with username:', username, 'password:', password);
 

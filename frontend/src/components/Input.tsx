@@ -27,7 +27,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ) => {
     const [hasContent, setHasContent] = React.useState(false);
     const inputRef = React.useRef<HTMLInputElement>(null);
-    
+
     // Combine refs
     React.useImperativeHandle(ref, () => inputRef.current!);
 
@@ -37,22 +37,23 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     // Check for autofilled content
     React.useEffect(() => {
       const currentInput = inputRef.current;
-      
+
       const checkAutofill = () => {
         if (currentInput) {
           const hasValue = currentInput.value !== '';
-          const isAutofilled = currentInput.matches(':-webkit-autofill') || 
-                              currentInput.matches(':autofill');
+          const isAutofilled =
+            currentInput.matches(':-webkit-autofill') ||
+            currentInput.matches(':autofill');
           setHasContent(hasValue || isAutofilled);
         }
       };
 
       // Check immediately
       checkAutofill();
-      
+
       // Set up observers for autofill detection
       const interval = setInterval(checkAutofill, 100);
-      
+
       // Also check on animation events (some browsers trigger this on autofill)
       const handleAnimationStart = (e: AnimationEvent) => {
         if (e.animationName === 'onAutoFillStart') {
@@ -67,7 +68,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       return () => {
         clearInterval(interval);
         if (currentInput) {
-          currentInput.removeEventListener('animationstart', handleAnimationStart);
+          currentInput.removeEventListener(
+            'animationstart',
+            handleAnimationStart
+          );
         }
       };
     }, []);
@@ -93,7 +97,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             animation-duration: 0.001s;
           }
         `}</style>
-        
+
         {label && (
           <label
             className={cn(

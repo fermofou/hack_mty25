@@ -22,8 +22,8 @@ export function UserTopBar() {
         <div className='flex items-center gap-8'>
           <BanorteLogo />
         </div>
-        <div className='flex items-center gap-6'>
-          <nav className='flex items-center gap-1'>
+        <div className='flex items-center gap-3'>
+          <nav className='flex items-center gap-2'>
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href;
