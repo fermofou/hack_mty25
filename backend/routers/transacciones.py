@@ -37,7 +37,7 @@ async def registrar_transaccion(trans_in: TransaccionCreate, session: AsyncSessi
     cliente = await session.get(Cliente, trans_in.cliente_id)
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
-    if trans_in.monto > 0:
+    if trans_in.monto > -9999999999:
         # Solo permitimos transacciones de retiro (monto positivo = gasto)
         if cliente.saldo < trans_in.monto:
             raise HTTPException(status_code=400, detail="Fondos insuficientes")
