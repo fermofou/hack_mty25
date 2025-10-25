@@ -1,24 +1,52 @@
 import type React from 'react';
 
+
+
 import { useState } from 'react';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { useNavigate } from 'react-router';
+import axios from 'axios';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    navigate('/user/dashboard');
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      try {
+        const { data } = await axios.post(`${apiUrl}/clientes/login`, {
+          username,
+          pwd: password,
+        });
+        console.log("fuck", data);
+        // You may want to store user info/token here
+        navigate('/user/dashboard');
+      } catch (err: any) {
+        console.log("broke with username:", username, "password:", password);
+        if (err.response && err.response.data && err.response.data.detail) {
+          setError(err.response.data.detail);
+        } else {
+          setError('Error al iniciar sesión');
+        }
+      }
+    } catch (err) {
+      console.log("brok 2 with username:", username, "password:", password);
+      setError('No se pudo conectar al servidor');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -36,14 +64,15 @@ export default function LoginPage() {
           </p>
 
           <form onSubmit={handleSubmit} className='space-y-6'>
+
             <Input
-              label='Correo electrónico'
-              type='email'
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              label='Nombre de Usuario'
+              type='text'
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
               showClearButton
-              onClear={() => setEmail('')}
+              onClear={() => setUsername('')}
             />
 
             <Input
