@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { toast } from "react-hot-toast";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { UserTopBar } from "@/components/UserTopBar";
@@ -154,9 +155,9 @@ export default function ApplyCreditPage() {
                           };
                           try {
                             await api.post("/creditos/", creditoPayload);
-                            alert("¡Crédito solicitado exitosamente!");
+                            toast.success("¡Crédito solicitado exitosamente!");
                           } catch (e) {
-                            alert("Error solicitando el crédito");
+                            toast.error("Error solicitando el crédito");
                           }
                         }}
                       />
