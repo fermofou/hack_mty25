@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
-from models.products import ProductResponse
+from models.gemini import ProductData
 from config import get_session
 from models.cliente import Cliente
 from models.transacciones import Transaccion
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/gemini", tags=["Gemini"])
 async def get_conversation_context(
     request: GeminiRequest,
     session: AsyncSession,
-    products: list[ProductResponse] | None = None,
+    products: list[ProductData] | None = None,
 ) -> str:
     # Get user data
     user = await session.get(Cliente, request.user_id)
@@ -86,7 +86,11 @@ async def process_message(
         # Search for related products
         product_query = response_type_data["object_in_response"]
         products = search_products(product_query)
+        print()
+        print("products", products)
         conv_context = await get_conversation_context(request, session, products)
+        print()
+        print("conv_context", conv_context)
         # This is the function where it takes the most time to run.
         offers = create_credit_offers(conv_context)
 

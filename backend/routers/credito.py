@@ -1,9 +1,9 @@
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from sqlmodel import select
 
+from models.gemini import CreditOffers
 from config import get_session
 from models.credito import Credito, CreditoCreate, CreditoRead, CreditoUpdate
 from models.item import Item
@@ -19,8 +19,11 @@ class PagoCreditoRequest(BaseModel):
     cliente_id: int
     monto: float
 
+
 @router.post("/pagar")
-async def pagar_credito(pago: PagoCreditoRequest, session: AsyncSession = Depends(get_session)):
+async def pagar_credito(
+    pago: PagoCreditoRequest, session: AsyncSession = Depends(get_session)
+):
     """
     Permite a un cliente pagar parte de un crédito.
     Valida que el cliente tenga saldo suficiente y que no pague más de lo que debe.
@@ -30,7 +33,9 @@ async def pagar_credito(pago: PagoCreditoRequest, session: AsyncSession = Depend
     # Obtener crédito
     credito = await session.get(Credito, pago.credito_id)
     if not credito or credito.cliente_id != pago.cliente_id:
-        raise HTTPException(status_code=404, detail="Crédito no encontrado para este cliente")
+        raise HTTPException(
+            status_code=404, detail="Crédito no encontrado para este cliente"
+        )
     # Obtener cliente
     cliente = await session.get(Cliente, pago.cliente_id)
     if not cliente:
@@ -48,11 +53,14 @@ async def pagar_credito(pago: PagoCreditoRequest, session: AsyncSession = Depend
     monto_restante = credito.prestamo - credito.pagado
     if pago.monto > monto_restante:
         print("7")
-        raise HTTPException(status_code=400, detail="No puedes pagar más de lo que debes del crédito")
+        raise HTTPException(
+            status_code=400, detail="No puedes pagar más de lo que debes del crédito"
+        )
     # Realizar pago
     print("8")
     # Usar SQL directo para evitar deadlocks ORM
     from sqlalchemy import update
+
     print("9")
     await session.execute(
         update(Cliente)
@@ -73,8 +81,9 @@ async def pagar_credito(pago: PagoCreditoRequest, session: AsyncSession = Depend
     print("12")
     return {
         "credito": CreditoRead.model_validate(credito).model_dump(),
-        "cliente": ClienteRead.model_validate(cliente).model_dump()
+        "cliente": ClienteRead.model_validate(cliente).model_dump(),
     }
+
 
 @router.post("/", response_model=CreditoRead, tags=["Creditos"])
 async def create_credito(
@@ -84,13 +93,19 @@ async def create_credito(
     # Valida que el cliente exista
     cliente = await session.get(Cliente, credito_in.cliente_id)
     if not cliente:
-        raise HTTPException(status_code=404, detail=f"No se puede crear crédito: Cliente con id {credito_in.cliente_id} no existe.")
+        raise HTTPException(
+            status_code=404,
+            detail=f"No se puede crear crédito: Cliente con id {credito_in.cliente_id} no existe.",
+        )
 
     # Valida que el item exista (si se proporciona)
     if credito_in.item_id:
         item = await session.get(Item, credito_in.item_id)
         if not item:
-            raise HTTPException(status_code=404, detail=f"No se puede crear crédito: Item con id {credito_in.item_id} no existe.")
+            raise HTTPException(
+                status_code=404,
+                detail=f"No se puede crear crédito: Item con id {credito_in.item_id} no existe.",
+            )
 
     db_credito = Credito.from_orm(credito_in)
     session.add(db_credito)
@@ -129,11 +144,11 @@ async def update_credito(
     db_credito = await session.get(Credito, credito_id)
     if not db_credito:
         raise HTTPException(status_code=404, detail="Credito no encontrado")
-    
+
     update_data = credito_in.dict(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_credito, key, value)
-    
+
     session.add(db_credito)
     await session.commit()
     await session.refresh(db_credito)
@@ -146,7 +161,37 @@ async def delete_credito(credito_id: int, session: AsyncSession = Depends(get_se
     db_credito = await session.get(Credito, credito_id)
     if not db_credito:
         raise HTTPException(status_code=404, detail="Credito no encontrado")
-    
+
     await session.delete(db_credito)
     await session.commit()
     return {"ok": True, "detail": "Credito eliminado"}
+
+
+# TODO: Fix real data here
+temporary_preapproved_items = [
+    {
+        "nombre": "Kit de Paneles Solares 5kW Monocristalinos",
+        "link": "https://www.mercadolibre.com.mx/kit-panel-solar-5kw",
+        "img_link": "https://evans.com.mx/media/catalog/product/cache/2210af2af20a4d3cb052fe59323561a1/S/i/Sistemas_Interconectados_EVANS_GEN_SOL5KW2X8_1L.jpg",
+        "precio": 120000.0,
+        "category": "Luz",
+    },
+    {
+        "nombre": "Auto Eléctrico BYD Dolphin 2024",
+        "link": "https://www.mercadolibre.com.mx/auto-electrico-byd-dolphin",
+        "img_link": "https://acnews.blob.core.windows.net/imgnews/medium/NAZ_2384e31a6daa4a76b2be47cd2967fa5d.webp",
+        "precio": 398000.0,
+        "category": "Transporte",
+    },
+]
+
+
+async def generate_preapproved_credit() -> CreditOffers:
+    """
+    Generates 1 possible pre-approved credit offer for the user ONLY IF:
+    1. They are eligible based on their credit score and transaction history
+    2. They do not already have a pre-approved credit offer
+    3. 30 minutes have not passed since the last offer attempt was called (to avoid spamming). Checked on frontend!
+
+    These offers only use one of previously defined products in the database, such as solar panels or electric cars.
+    """
