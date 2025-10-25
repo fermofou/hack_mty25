@@ -1,5 +1,10 @@
 // Transaction categories
-export type TransactionCategory = 'electricity' | 'transportation' | 'water' | 'gas' | 'misc';
+export type TransactionCategory =
+  | 'electricity'
+  | 'transportation'
+  | 'water'
+  | 'gas'
+  | 'misc';
 
 // Transaction type
 export interface Transaction {
@@ -41,7 +46,7 @@ export const mockCredits: Credit[] = [
     type: 'green',
     interestRate: 8.5,
     termMonths: 24,
-    createdAt: '2024-01-15'
+    createdAt: '2024-01-15',
   },
   {
     id: 'credit-2',
@@ -53,8 +58,8 @@ export const mockCredits: Credit[] = [
     type: 'traditional',
     interestRate: 12.0,
     termMonths: 18,
-    createdAt: '2024-03-20'
-  }
+    createdAt: '2024-03-20',
+  },
 ];
 
 // Mock transactions data
@@ -66,7 +71,7 @@ export const mockTransactions: Transaction[] = [
     amount: -850,
     type: 'debit',
     category: 'electricity',
-    date: '2024-10-20'
+    date: '2024-10-20',
   },
   {
     id: 'trans-2',
@@ -75,7 +80,7 @@ export const mockTransactions: Transaction[] = [
     amount: 125,
     type: 'credit',
     category: 'misc',
-    date: '2024-10-18'
+    date: '2024-10-18',
   },
   {
     id: 'trans-3',
@@ -84,7 +89,7 @@ export const mockTransactions: Transaction[] = [
     amount: -45,
     type: 'debit',
     category: 'transportation',
-    date: '2024-10-15'
+    date: '2024-10-15',
   },
   {
     id: 'trans-4',
@@ -93,7 +98,7 @@ export const mockTransactions: Transaction[] = [
     amount: -320,
     type: 'debit',
     category: 'water',
-    date: '2024-10-12'
+    date: '2024-10-12',
   },
   {
     id: 'trans-5',
@@ -102,6 +107,6 @@ export const mockTransactions: Transaction[] = [
     amount: 75,
     type: 'credit',
     category: 'electricity',
-    date: '2024-10-10'
-  }
+    date: '2024-10-10',
+  },
 ];

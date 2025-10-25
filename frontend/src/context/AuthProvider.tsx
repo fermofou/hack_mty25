@@ -9,8 +9,8 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     name: 'Juan Carlos',
     lastName: 'García López',
     type: 'user',
-    balance: 15750.50,
-    accountNumber: '**** **** **** 4532'
+    balance: 15750.5,
+    accountNumber: '**** **** **** 4532',
   };
 
   const [user, setUser] = useState<User | undefined>(mockUser);

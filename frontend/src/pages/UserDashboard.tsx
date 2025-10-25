@@ -4,20 +4,14 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../hooks/useAuth';
 import { UserTopBar } from '../components/UserTopBar';
-import { Button } from '../components/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import {
-  mockCredits,
-  mockTransactions,
-  type TransactionCategory,
-} from '../lib/mock-data';
-import {
-  CreditCard,
-  TrendingUp,
-  Clock,
-  ArrowDownLeft,
-  ArrowUpRightIcon,
-} from 'lucide-react';
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '../components/ui/card';
+import { mockTransactions, type TransactionCategory } from '../lib/mock-data';
+import { ArrowDownLeft, ArrowUpRightIcon } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 
 export default function UserDashboard() {
@@ -36,15 +30,6 @@ export default function UserDashboard() {
   if (!user) {
     return null;
   }
-
-  const userCredits = mockCredits.filter(
-    (c) => c.userId === user.id && c.status === 'approved'
-  );
-  const totalDebt = userCredits.reduce((sum, c) => sum + c.remainingBalance, 0);
-  const monthlyPayment = userCredits.reduce(
-    (sum, c) => sum + c.monthlyPayment,
-    0
-  );
 
   const userTransactions = mockTransactions.filter((t) => t.userId === user.id);
   const filteredTransactions =
@@ -105,69 +90,15 @@ export default function UserDashboard() {
                 </p>
                 <p className='text-white/80 text-sm'>{user.accountNumber}</p>
               </div>
-              <Button
-                variant='secondary'
-                className='bg-white/20 text-white border-white/40 hover:bg-white/30'
-                onClick={() => navigate('/user/credits')}
-              >
-                Ver créditos
-              </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Stats grid */}
-        <div className='grid gap-6 md:grid-cols-3 mb-8'>
-          <Card>
-            <CardHeader className='flex flex-row items-center justify-between pb-2'>
-              <CardTitle className='text-sm font-medium text-muted-foreground'>
-                Créditos activos
-              </CardTitle>
-              <CreditCard className='h-4 w-4 text-muted-foreground' />
-            </CardHeader>
-            <CardContent>
-              <div className='text-2xl font-bold'>{userCredits.length}</div>
-              <p className='text-xs text-muted-foreground mt-1'>
-                Total adeudado: ${totalDebt.toLocaleString('es-MX')}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className='flex flex-row items-center justify-between pb-2'>
-              <CardTitle className='text-sm font-medium text-muted-foreground'>
-                Pago mensual
-              </CardTitle>
-              <TrendingUp className='h-4 w-4 text-muted-foreground' />
-            </CardHeader>
-            <CardContent>
-              <div className='text-2xl font-bold'>
-                $
-                {monthlyPayment.toLocaleString('es-MX', {
-                  minimumFractionDigits: 2,
-                })}
-              </div>
-              <p className='text-xs text-muted-foreground mt-1'>
-                Próximo pago: 15 Nov 2024
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className='flex flex-row items-center justify-between pb-2'>
-              <CardTitle className='text-sm font-medium text-muted-foreground'>
-                Historial crediticio
-              </CardTitle>
-              <Clock className='h-4 w-4 text-muted-foreground' />
-            </CardHeader>
-            <CardContent>
-              <div className='text-2xl font-bold text-[#6CC04A]'>Excelente</div>
-              <p className='text-xs text-muted-foreground mt-1'>
-                100% pagos a tiempo
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Preapproved credit */}
+        <Card className='mb-8 bg-green-300'>
+          <CardHeader className='text-green-700 font-bold'>Hola</CardHeader>
+          <CardContent>Hola</CardContent>
+        </Card>
 
         <div className='mb-8'>
           <div className='flex items-center justify-between mb-4'>
