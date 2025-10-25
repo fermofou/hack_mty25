@@ -1,3 +1,4 @@
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
@@ -10,6 +11,22 @@ from models.cliente import Cliente
 from models.item import Item
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
+
+@router.get("/manage_credits/aceptados")
+async def creditos_aceptados(session: AsyncSession = Depends(get_session)):
+    """Devuelve todos los créditos en estado ACEPTADO, con info de cliente e item relacionado."""
+    statement = select(Credito).where(Credito.estado == "ACEPTADO")
+    result = await session.execute(statement)
+    creditos = result.scalars().all()
+    return await build_creditos_response(creditos, session)()
+
+@router.get("/manage_credits")
+async def creditos_todos(session: AsyncSession = Depends(get_session)):
+    """Devuelve todos los créditos, con info de cliente e item relacionado."""
+    statement = select(Credito)
+    result = await session.execute(statement)
+    creditos = result.scalars().all()
+    return await build_creditos_response(creditos, session)()
 
 # Signup endpoint para Admin
 @router.post("/signup", response_model=AdminRead)
@@ -169,6 +186,7 @@ def build_creditos_response(creditos, session):
             item = await session.get(Item, credito.item_id) if credito.item_id else None
             response.append({
                 "credito": {
+                    "id_cred": credito.id_cred,
                     "prestamo": credito.prestamo,
                     "interes": credito.interes,
                     "meses_originales": credito.meses_originales,

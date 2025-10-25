@@ -12,6 +12,30 @@ from models.item import Item
 
 router = APIRouter(prefix="/clientes", tags=["Clientes"])
 
+# Endpoint para cambiar el estado de un crédito a ACEPTADO
+@router.patch("/{cliente_id}/creditos/{credito_id}/aceptar")
+async def aceptar_credito_cliente(cliente_id: int, credito_id: int, session: AsyncSession = Depends(get_session)):
+    credito = await session.get(Credito, credito_id)
+    if not credito or credito.cliente_id != cliente_id:
+        raise HTTPException(status_code=404, detail="Crédito no encontrado para este cliente")
+    credito.estado = "ACEPTADO"
+    session.add(credito)
+    await session.commit()
+    await session.refresh(credito)
+    return {"ok": True, "id_cred": credito.id_cred, "nuevo_estado": credito.estado}
+
+# Endpoint para cambiar el estado de un crédito a NEGADO
+@router.patch("/{cliente_id}/creditos/{credito_id}/negar")
+async def negar_credito_cliente(cliente_id: int, credito_id: int, session: AsyncSession = Depends(get_session)):
+    credito = await session.get(Credito, credito_id)
+    if not credito or credito.cliente_id != cliente_id:
+        raise HTTPException(status_code=404, detail="Crédito no encontrado para este cliente")
+    credito.estado = "NEGADO"
+    session.add(credito)
+    await session.commit()
+    await session.refresh(credito)
+    return {"ok": True, "id_cred": credito.id_cred, "nuevo_estado": credito.estado}
+
 # Helper para armar la respuesta de créditos
 async def build_creditos_response(creditos, session):
     response = []
@@ -20,6 +44,7 @@ async def build_creditos_response(creditos, session):
         item = await session.get(Item, credito.item_id) if credito.item_id else None
         response.append({
             "credito": {
+                "id_cred": credito.id_cred,
                 "prestamo": credito.prestamo,
                 "interes": credito.interes,
                 "meses_originales": credito.meses_originales,
