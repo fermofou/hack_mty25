@@ -3,6 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from sqlmodel import select, or_
+from datetime import date, datetime, timedelta
+from pydantic import BaseModel
 
 from config import get_session
 from models.cliente import Cliente, ClienteCreate, ClienteRead, ClienteUpdate
@@ -11,6 +13,27 @@ from models.credito import Credito
 from models.item import Item
 
 router = APIRouter(prefix="/clientes", tags=["Clientes"])
+
+# Endpoint para obtener gasto mensual por categoría en el último mes
+@router.get("/{cliente_id}/gastos_mensuales", tags=["Transacciones"])
+async def get_gastos_mensuales(cliente_id: int, session: AsyncSession = Depends(get_session)):
+    """Devuelve una lista de objetos con categoria y gasto_mensual (suma de gastos del último mes por categoría)."""
+    hoy = datetime.now()
+    hace_un_mes = hoy - timedelta(days=30)
+    statement = select(Transaccion).where(
+        Transaccion.cliente_id == cliente_id,
+        Transaccion.fecha >= hace_un_mes
+    )
+    result = await session.execute(statement)
+    transacciones = result.scalars().all()
+    gastos_por_categoria = {}
+    for t in transacciones:
+        if t.categoria:
+            gastos_por_categoria.setdefault(t.categoria, 0)
+            gastos_por_categoria[t.categoria] += t.monto
+    return [
+        {"categoria": cat, "gasto_mensual": gasto} for cat, gasto in gastos_por_categoria.items()
+    ]
 
 # Endpoint para cambiar el estado de un crédito a ACEPTADO
 @router.patch("/{cliente_id}/creditos/{credito_id}/aceptar")
@@ -103,9 +126,6 @@ async def get_creditos_negado(cliente_id: int, session: AsyncSession = Depends(g
 async def get_creditos_pendiente(cliente_id: int, session: AsyncSession = Depends(get_session)):
     return await creditos_estado_endpoint("PENDIENTE")(cliente_id, session)
 
-# Signup endpoint para Cliente
-from datetime import date
-from pydantic import BaseModel
 
 class ClienteSignup(BaseModel):
     nombre: str
