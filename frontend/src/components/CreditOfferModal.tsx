@@ -1,13 +1,15 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
+
+import { Button } from "./Button";
 
 interface CreditOfferModalProps {
   offer: any;
   onClose: () => void;
+  onRequestCredit?: () => void;
 }
 
 
-export const CreditOfferModal: React.FC<CreditOfferModalProps> = ({ offer, onClose }) => {
+export const CreditOfferModal: React.FC<CreditOfferModalProps> = ({ offer, onClose, onRequestCredit }) => {
   if (!offer) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -17,44 +19,79 @@ export const CreditOfferModal: React.FC<CreditOfferModalProps> = ({ offer, onClo
         onClick={onClose}
         aria-label="Cerrar fondo"
       />
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-10 relative pointer-events-auto border-2 border-gray-200 z-10">
-        <button
-          className="absolute top-4 right-4 text-gray-700 hover:text-gray-900 text-3xl font-bold"
-          onClick={onClose}
-          aria-label="Cerrar"
-        >
-          &times;
-        </button>
-        <Card className="border-none shadow-none bg-transparent">
-          <CardContent className="flex flex-col items-center p-0">
-            <img src={offer.product.img_link} alt={offer.product.nombre} className="h-32 w-32 object-contain rounded-lg bg-white mb-4" />
-            <h3 className="font-bold text-2xl text-gray-900 text-center mb-2">{offer.product.nombre}</h3>
-            <p className="text-base text-center mb-4 text-gray-700">{offer.descripcion}</p>
-            <div className="grid grid-cols-2 gap-4 w-full mb-4">
-              <div className="bg-white rounded-lg p-4 text-center border border-gray-200 shadow-sm">
-                <div className="text-xl font-bold text-gray-900">${offer.prestamo}</div>
-                <div className="text-xs text-gray-500 font-medium">Monto</div>
-              </div>
-              <div className="bg-white rounded-lg p-4 text-center border border-gray-200 shadow-sm">
-                <div className="text-xl font-bold text-gray-900">{offer.interes}%</div>
-                <div className="text-xs text-gray-500 font-medium">Interés</div>
-              </div>
-              <div className="bg-white rounded-lg p-4 text-center border border-gray-200 shadow-sm">
-                <div className="text-xl font-bold text-gray-900">{offer.meses_originales}</div>
-                <div className="text-xs text-gray-500 font-medium">Meses</div>
-              </div>
-              <div className="bg-white rounded-lg p-4 text-center border border-gray-200 shadow-sm">
-                <div className="text-xl font-bold text-gray-900">${offer.gasto_inicial_mes}</div>
-                <div className="text-xs text-gray-500 font-medium">Pago inicial</div>
-              </div>
-              <div className="bg-white rounded-lg p-4 text-center border border-gray-200 shadow-sm col-span-2">
-                <div className="text-xl font-bold text-gray-900">${offer.gasto_final_mes}</div>
-                <div className="text-xs text-gray-500 font-medium">Pago final</div>
-              </div>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-0 relative pointer-events-auto border-2 border-gray-200 z-10 flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-8 pt-8 pb-2">
+          <h2 className="text-2xl font-bold text-foreground">Oferta de Crédito</h2>
+          <button
+            className="text-gray-700 hover:text-gray-900 text-3xl font-bold"
+            onClick={onClose}
+            aria-label="Cerrar"
+          >
+            &times;
+          </button>
+        </div>
+        {/* Main content */}
+        <div className="px-8 pb-8 flex flex-col gap-4">
+          <div className="flex flex-row gap-6 items-center mb-2">
+            <img src={offer.product.img_link} alt={offer.product.nombre} className="h-24 w-24 object-contain rounded-lg bg-white" />
+            <div className="flex-1">
+              <h3 className="font-bold text-xl text-foreground mb-1">{offer.product.nombre}</h3>
+              <p className="text-base text-muted-foreground mb-2">{offer.descripcion}</p>
+              <a href={offer.product.link} target="_blank" rel="noopener noreferrer" className="text-primary underline font-semibold">Ver producto</a>
             </div>
-            <a href={offer.product.link} target="_blank" rel="noopener noreferrer" className="text-gray-700 underline mt-2 font-semibold">Ver producto</a>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-2">
+            <div className="bg-white rounded-lg p-4 text-center border border-gray-200 shadow-sm">
+              <div className="text-xl font-bold text-foreground">${offer.prestamo}</div>
+              <div className="text-xs text-muted-foreground font-medium">Monto</div>
+            </div>
+            <div className="bg-white rounded-lg p-4 text-center border border-gray-200 shadow-sm">
+              <div className="text-xl font-bold text-foreground">{offer.interes}%</div>
+              <div className="text-xs text-muted-foreground font-medium">Interés</div>
+            </div>
+            <div className="bg-white rounded-lg p-4 text-center border border-gray-200 shadow-sm">
+              <div className="text-xl font-bold text-foreground">{offer.meses_originales}</div>
+              <div className="text-xs text-muted-foreground font-medium">Meses</div>
+            </div>
+            <div className="bg-white rounded-lg p-4 text-center border border-gray-200 shadow-sm">
+              <div className="text-xl font-bold text-foreground">${offer.gasto_inicial_mes}</div>
+              <div className="text-xs text-muted-foreground font-medium">Pago mensual inicial</div>
+            </div>
+            <div className="bg-white rounded-lg p-4 text-center border border-gray-200 shadow-sm col-span-2 md:col-span-4">
+              <div className="text-xl font-bold text-foreground">${offer.gasto_final_mes}</div>
+              <div className="text-xs text-muted-foreground font-medium">Pago mensual final</div>
+            </div>
+          </div>
+          {/* Benefits section (optional, can be extended) */}
+          {offer.beneficios && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-2">
+              <div className="font-semibold mb-2 text-foreground">Beneficios incluidos:</div>
+              <ul className="list-disc pl-5 text-sm text-muted-foreground">
+                {offer.beneficios.map((b: string, i: number) => (
+                  <li key={i}>{b}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {/* Action buttons */}
+          <div className="flex flex-row gap-4 mt-4">
+            <Button
+              variant="primary"
+              className="flex-1 text-base py-3"
+              onClick={() => onRequestCredit && onRequestCredit()}
+            >
+              Pedir crédito
+            </Button>
+            <Button
+              variant="secondary"
+              className="flex-1 text-base py-3"
+              onClick={onClose}
+            >
+              Cerrar
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
