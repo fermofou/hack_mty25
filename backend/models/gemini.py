@@ -16,6 +16,19 @@ class ChatResponseType(BaseModel):
     object_in_response: str
 
 
+class CreditOffer(BaseModel):
+    prestamo: float
+    interes: float
+    meses_originales: int
+    descripcion: str
+    gasto_inicial_mes: float
+    gasto_final_mes: float
+
+
+class CreditOffers(BaseModel):
+    creditOffers: list[CreditOffer]
+
+
 class ChatMessageResponse(BaseModel):
     """
     Response model when the message is of type 'credit' ro 'text'.
@@ -24,4 +37,4 @@ class ChatMessageResponse(BaseModel):
 
     response_type: Literal["text", "credit"]
     object_in_response: str
-    products: list[ProductResponse]
+    creditOffers: list[CreditOffer]
