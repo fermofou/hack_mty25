@@ -30,11 +30,16 @@ function TransactionList() {
 
   if (!user) return null;
 
+  const categoryList = ['Luz', 'Gas', 'Agua', 'Transporte'];
+
   const filteredTransactions =
     (selectedCategory === 'all'
       ? userTransactions
-      : userTransactions?.filter((t) => t.categoria === selectedCategory)) ??
-    [];
+      : userTransactions?.filter(
+          (t) =>
+            t.categoria === selectedCategory ||
+            !categoryList.includes(t.categoria)
+        )) ?? [];
 
   const categories: { value: string; label: string }[] = [
     { value: 'all', label: 'Todas' },
@@ -44,23 +49,6 @@ function TransactionList() {
     { value: 'Gas', label: 'Gas' },
     { value: '_', label: 'Otros' },
   ];
-
-  const getCategoryColor = (category: string) => {
-    const categories = ['Luz', 'Transporte', 'Agua', 'Gas'];
-    const colors = {
-      Luz: 'bg-yellow-100 text-yellow-800',
-      Transporte: 'bg-blue-100 text-blue-800',
-      Agua: 'bg-cyan-100 text-cyan-800',
-      Gas: 'bg-orange-100 text-orange-800',
-    };
-
-    if (!categories.includes(category)) {
-      return 'bg-gray-100 text-gray-800';
-    }
-    const color = colors[category as keyof typeof colors];
-    console.log(category, color);
-    return color;
-  };
 
   return (
     <div className='mb-8'>
@@ -127,9 +115,29 @@ function TransactionList() {
                         </p>
                         <Badge
                           variant='secondary'
-                          className={`text-xs ${getCategoryColor(
-                            transaction.categoria
-                          )}`}
+                          className='text-xs'
+                          style={{
+                            backgroundColor:
+                              transaction.categoria === 'Luz'
+                                ? '#fef3c7' // yellow-100
+                                : transaction.categoria === 'Transporte'
+                                ? '#dbeafe' // blue-100
+                                : transaction.categoria === 'Agua'
+                                ? '#cffafe' // cyan-100
+                                : transaction.categoria === 'Gas'
+                                ? '#fed7aa' // orange-100
+                                : '#f3f4f6', // gray-100 (default)
+                            color:
+                              transaction.categoria === 'Luz'
+                                ? '#92400e' // yellow-800
+                                : transaction.categoria === 'Transporte'
+                                ? '#1e40af' // blue-800
+                                : transaction.categoria === 'Agua'
+                                ? '#155e75' // cyan-800
+                                : transaction.categoria === 'Gas'
+                                ? '#9a3412' // orange-800
+                                : '#1f2937', // gray-800 (default)
+                          }}
                         >
                           {categories.find(
                             (c) => c.value === transaction.categoria
