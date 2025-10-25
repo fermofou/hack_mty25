@@ -8,7 +8,8 @@ import { Input } from "@/components/Input";
 import { Card, CardContent } from "@/components/ui/card";
 import { CreditOfferCard } from "@/components/CreditOfferCard";
 import { CreditOfferModal } from "@/components/CreditOfferModal";
-import { Send, Bot, User } from "lucide-react";
+import { Send, Bot, User, ChevronLeft } from "lucide-react";
+import { Link } from 'react-router';
 
 type Message =
   | { role: "assistant" | "user"; content: string }
@@ -102,10 +103,18 @@ export default function ApplyCreditPage() {
       <UserTopBar />
 
       <main className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Title section - removed back button */}
+        {/* Title section with back button */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Solicitar crédito</h1>
-          <p className="text-muted-foreground">Completa la información con nuestro asistente virtual</p>
+          <div className="flex items-center gap-3 mb-2">
+            <Link
+              to="/user/credits"
+              className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <ChevronLeft className="h-7 w-7 text-[#EB0029]" />
+            </Link>
+            <h1 className="text-3xl font-bold text-foreground">Solicitar crédito</h1>
+          </div>
+          <p className="text-muted-foreground ml-13">Completa la información con nuestro asistente virtual</p>
         </div>
 
         {/* Chat interface */}
