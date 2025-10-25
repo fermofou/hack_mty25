@@ -26,6 +26,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     ref
   ) => {
     const [hasContent, setHasContent] = React.useState(false);
+    const [isFocused, setIsFocused] = React.useState(false);
     const inputRef = React.useRef<HTMLInputElement>(null);
 
     // Combine refs
@@ -78,10 +79,25 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     // Update hasContent when value changes
     React.useEffect(() => {
-      setHasContent(value !== '' && value !== undefined);
+      const hasValue = value !== '' && value !== undefined && value !== null;
+      setHasContent(hasValue);
     }, [value]);
 
-    const shouldFloatLabel = hasContent || value !== '' || value !== undefined;
+    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+      setIsFocused(true);
+      if (props.onFocus) {
+        props.onFocus(e);
+      }
+    };
+
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      setIsFocused(false);
+      if (props.onBlur) {
+        props.onBlur(e);
+      }
+    };
+
+    const shouldFloatLabel = hasContent || isFocused;
 
     return (
       <div className='w-full relative group'>
@@ -126,6 +142,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           style={{ fontFamily: 'Gotham, sans-serif', fontWeight: 500 }}
           value={value}
           placeholder=' '
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           {...props}
         />
         <div className='flex items-center justify-between mt-1.5'>
