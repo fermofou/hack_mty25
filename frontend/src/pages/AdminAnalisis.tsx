@@ -118,7 +118,7 @@ export default function UserDashboard() {
         {/* Welcome section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Panel de Administración
+            Analisis de Créditos Verdes
           </h1>
           <p className="text-muted-foreground">
             Resumen general de créditos verdes
@@ -126,73 +126,6 @@ export default function UserDashboard() {
         </div>
 
         {/* Key metrics */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Clientes (Sucursal)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {clientesConCreditos.toLocaleString("es-MX")}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Clientes con créditos verdes activos
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Créditos Activos
-              </CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{creditosVerdes}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                ${mockAdminStats.totalDisbursed.toLocaleString("es-MX")}{" "}
-                desembolsados
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Alertas de Pago
-              </CardTitle>
-              <AlertCircle className="h-4 w-4 text-[#EB0029]" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-[#EB0029]">
-                {clientesConAlertas.length}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Clientes con pagos atrasados
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Créditos pendientes de aprobación
-              </CardTitle>
-              <AlertCircle className="h-4 w-4 text-[#FFA400]" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-[#FFA400]">
-                {pendientesAprobar}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Requieren aprobación
-              </p>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Tabla de Alertas (Tu idea principal) */}
 
