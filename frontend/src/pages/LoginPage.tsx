@@ -3,6 +3,7 @@ import type React from 'react';
 import { useState } from 'react';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
+import BanorteLogo from '@/components/BanorteLogo';
 import { useNavigate } from 'react-router';
 import { AxiosError } from 'axios';
 import { api } from '@/lib/api';
@@ -111,7 +112,7 @@ export default function LoginPage() {
       {/* Right side - Branding */}
       <div className='hidden lg:flex lg:w-1/2 bg-[#EB0029] items-center justify-center p-16'>
         <div className='text-center flex gap-4 flex-col'>
-          <img src='images/logo_white.png' />
+          <BanorteLogo variant='white' />
           <p className='text-xl text-white/90'>
             Gestiona tus créditos de forma simple y segura
           </p>

@@ -1,6 +1,6 @@
 'use client';
 
-import { BanorteLogo } from './banorte-logo';
+import BanorteLogo from './BanorteLogo';
 import { Button } from './Button';
 import { useLocation, useNavigate } from 'react-router';
 import { Home, CreditCard, FileText, Leaf } from 'lucide-react';
