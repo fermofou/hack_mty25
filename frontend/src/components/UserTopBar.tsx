@@ -3,17 +3,24 @@
 import BanorteLogo from './BanorteLogo';
 import { Button } from './Button';
 import { useLocation, useNavigate } from 'react-router';
-import { Home, CreditCard, FileText, Leaf } from 'lucide-react';
+import { Home, CreditCard, Leaf } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 export function UserTopBar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const navItems = [
     { href: '/user/dashboard', label: 'Inicio', icon: Home },
     { href: '#', label: 'Créditos', icon: CreditCard },
     { href: '/user/credits', label: 'Créditos Verdes', icon: Leaf },
   ];
+
+  const logout = () => {
+    navigate('/');
+    login(null);
+  };
 
   return (
     <div className='border-b bg-white'>
@@ -43,7 +50,7 @@ export function UserTopBar() {
               );
             })}
           </nav>
-          <Button variant='tertiary' onClick={() => navigate('/')}>
+          <Button variant='tertiary' onClick={logout}>
             Cerrar sesión
           </Button>
         </div>

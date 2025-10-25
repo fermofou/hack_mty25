@@ -1,10 +1,9 @@
-import { BrowserRouter, Route, Routes } from "react-router";
-import { AuthProvider } from "./context/AuthProvider";
-import LoginPage from "./pages/LoginPage";
-import LoginPageAdmin from "./pages/LoginPageAdmin";
-import UserDashboard from "./pages/UserDashboard";
-import CreditsDashboard from "./pages/CreditsDashboard";
-import ApplyCreditPage from "./pages/ApplyCreditPage";
+import { BrowserRouter, Route, Routes } from 'react-router';
+import { AuthProvider } from './context/AuthProvider';
+import LoginPage from './pages/LoginPage';
+import LoginPageAdmin from './pages/LoginPageAdmin';
+import UserDashboard from './pages/UserDashboard';
+import CreditsDashboard from './pages/CreditsDashboard';
 //import AdminPage from "./pages/AdminPage";
 
 function App() {
@@ -12,11 +11,10 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<LoginPage />} />
-          <Route path="/admin" element={<LoginPageAdmin />} />
-          <Route path="/user/dashboard" element={<UserDashboard />} />
-          <Route path="/user/credits" element={<CreditsDashboard />} />
-          <Route path="/user/credits/apply" element={<ApplyCreditPage />} />
+          <Route path='/' element={<LoginPage />} />
+          <Route path='/admin' element={<LoginPageAdmin />} />
+          <Route path='/user/dashboard' element={<UserDashboard />} />
+          <Route path='/user/credits' element={<CreditsDashboard />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

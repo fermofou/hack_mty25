@@ -37,6 +37,18 @@ export interface SustainabilitySavings {
   co2ReductionKg: number;
 }
 
+// Savings timeline data for chart
+export interface SavingsTimelineData {
+  month: string;
+  savings: number;
+  cumulativeSavings: number;
+}
+
+// Category savings data
+export interface CategorySavingsData {
+  [key: string]: SavingsTimelineData[];
+}
+
 // Mock credits data
 export const mockCredits: Credit[] = [
   {
@@ -102,3 +114,79 @@ export const mockSustainabilitySavings: SustainabilitySavings[] = [
     co2ReductionKg: 1200,
   },
 ];
+
+// Mock savings timeline data (last 12 months)
+export const mockSavingsTimeline: SavingsTimelineData[] = [
+  { month: 'Ene 2024', savings: 0, cumulativeSavings: 0 },
+  { month: 'Feb 2024', savings: 800, cumulativeSavings: 800 },
+  { month: 'Mar 2024', savings: 1200, cumulativeSavings: 2000 },
+  { month: 'Abr 2024', savings: 1500, cumulativeSavings: 3500 },
+  { month: 'May 2024', savings: 1800, cumulativeSavings: 5300 },
+  { month: 'Jun 2024', savings: 2100, cumulativeSavings: 7400 },
+  { month: 'Jul 2024', savings: 2300, cumulativeSavings: 9700 },
+  { month: 'Ago 2024', savings: 2400, cumulativeSavings: 12100 },
+  { month: 'Sep 2024', savings: 2300, cumulativeSavings: 14400 },
+  { month: 'Oct 2024', savings: 2200, cumulativeSavings: 16600 },
+  { month: 'Nov 2024', savings: 2000, cumulativeSavings: 18600 },
+  { month: 'Dic 2024', savings: 2300, cumulativeSavings: 20900 },
+];
+
+// Category-specific savings data
+export const categorySavingsData: CategorySavingsData = {
+  Electricidad: [
+    { month: 'Ene 2024', savings: 0, cumulativeSavings: 0 },
+    { month: 'Feb 2024', savings: 450, cumulativeSavings: 450 },
+    { month: 'Mar 2024', savings: 520, cumulativeSavings: 970 },
+    { month: 'Abr 2024', savings: 680, cumulativeSavings: 1650 },
+    { month: 'May 2024', savings: 720, cumulativeSavings: 2370 },
+    { month: 'Jun 2024', savings: 850, cumulativeSavings: 3220 },
+    { month: 'Jul 2024', savings: 920, cumulativeSavings: 4140 },
+    { month: 'Ago 2024', savings: 980, cumulativeSavings: 5120 },
+    { month: 'Sep 2024', savings: 890, cumulativeSavings: 6010 },
+    { month: 'Oct 2024', savings: 870, cumulativeSavings: 6880 },
+    { month: 'Nov 2024', savings: 820, cumulativeSavings: 7700 },
+    { month: 'Dic 2024', savings: 940, cumulativeSavings: 8640 },
+  ],
+  Agua: [
+    { month: 'Ene 2024', savings: 0, cumulativeSavings: 0 },
+    { month: 'Feb 2024', savings: 150, cumulativeSavings: 150 },
+    { month: 'Mar 2024', savings: 180, cumulativeSavings: 330 },
+    { month: 'Abr 2024', savings: 220, cumulativeSavings: 550 },
+    { month: 'May 2024', savings: 280, cumulativeSavings: 830 },
+    { month: 'Jun 2024', savings: 320, cumulativeSavings: 1150 },
+    { month: 'Jul 2024', savings: 380, cumulativeSavings: 1530 },
+    { month: 'Ago 2024', savings: 420, cumulativeSavings: 1950 },
+    { month: 'Sep 2024', savings: 390, cumulativeSavings: 2340 },
+    { month: 'Oct 2024', savings: 360, cumulativeSavings: 2700 },
+    { month: 'Nov 2024', savings: 340, cumulativeSavings: 3040 },
+    { month: 'Dic 2024', savings: 380, cumulativeSavings: 3420 },
+  ],
+  Gas: [
+    { month: 'Ene 2024', savings: 0, cumulativeSavings: 0 },
+    { month: 'Feb 2024', savings: 120, cumulativeSavings: 120 },
+    { month: 'Mar 2024', savings: 200, cumulativeSavings: 320 },
+    { month: 'Abr 2024', savings: 280, cumulativeSavings: 600 },
+    { month: 'May 2024', savings: 350, cumulativeSavings: 950 },
+    { month: 'Jun 2024', savings: 420, cumulativeSavings: 1370 },
+    { month: 'Jul 2024', savings: 480, cumulativeSavings: 1850 },
+    { month: 'Ago 2024', savings: 520, cumulativeSavings: 2370 },
+    { month: 'Sep 2024', savings: 490, cumulativeSavings: 2860 },
+    { month: 'Oct 2024', savings: 460, cumulativeSavings: 3320 },
+    { month: 'Nov 2024', savings: 430, cumulativeSavings: 3750 },
+    { month: 'Dic 2024', savings: 480, cumulativeSavings: 4230 },
+  ],
+  Transporte: [
+    { month: 'Ene 2024', savings: 0, cumulativeSavings: 0 },
+    { month: 'Feb 2024', savings: 280, cumulativeSavings: 280 },
+    { month: 'Mar 2024', savings: 420, cumulativeSavings: 700 },
+    { month: 'Abr 2024', savings: 580, cumulativeSavings: 1280 },
+    { month: 'May 2024', savings: 650, cumulativeSavings: 1930 },
+    { month: 'Jun 2024', savings: 720, cumulativeSavings: 2650 },
+    { month: 'Jul 2024', savings: 780, cumulativeSavings: 3430 },
+    { month: 'Ago 2024', savings: 820, cumulativeSavings: 4250 },
+    { month: 'Sep 2024', savings: 790, cumulativeSavings: 5040 },
+    { month: 'Oct 2024', savings: 760, cumulativeSavings: 5800 },
+    { month: 'Nov 2024', savings: 720, cumulativeSavings: 6520 },
+    { month: 'Dic 2024', savings: 800, cumulativeSavings: 7320 },
+  ],
+};
