@@ -263,8 +263,8 @@ async def get_creditos_aceptado(
     return await creditos_estado_endpoint("ACEPTADO")(cliente_id, session)
 
 
-@router.get("/{cliente_id}/creditos/aprovado", tags=["Creditos"])
-async def get_creditos_aprovado(
+@router.get("/{cliente_id}/creditos/aprobado", tags=["Creditos"])
+async def get_creditos_aprobado(
     cliente_id: int, session: AsyncSession = Depends(get_session)
 ):
     return await creditos_estado_endpoint("APROBADO")(cliente_id, session)
