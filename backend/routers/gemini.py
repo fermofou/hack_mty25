@@ -116,7 +116,7 @@ async def process_message(
         ------
         USER MESSAGE:
         """
-        gemini_response = gemini_basic_response(context + request)
+        gemini_response = gemini_basic_response(context + request.last_message)
         return {"response_type": "text", "text_response": gemini_response}
 
 

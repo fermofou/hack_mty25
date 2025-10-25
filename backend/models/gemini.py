@@ -15,6 +15,15 @@ class ChatResponseType(BaseModel):
     object_in_response: str
 
 
+class ProductData(BaseModel):
+    """Product information for credit offers"""
+
+    nombre: str
+    link: str
+    img_link: str
+    precio: float
+
+
 class CreditOffer(BaseModel):
     prestamo: float
     interes: float
@@ -22,6 +31,7 @@ class CreditOffer(BaseModel):
     descripcion: str
     gasto_inicial_mes: float
     gasto_final_mes: float
+    product: ProductData
 
 
 class CreditOffers(BaseModel):

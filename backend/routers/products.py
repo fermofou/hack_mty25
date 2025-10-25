@@ -55,8 +55,10 @@ def search_products(query, page=1, country="mx"):
     conn.request("POST", "/shopping", payload, headers)
     res = conn.getresponse()
     data = res.read()
+    print("data", data)
 
     products_data = json.loads(data.decode("utf-8")).get("products", [])
+    print("products_data", products_data)
 
     simplified_products: List[ProductResponse] = [
         ProductResponse(
@@ -67,6 +69,8 @@ def search_products(query, page=1, country="mx"):
         )
         for p in products_data[:20]
     ]
+
+    print(simplified_products)
 
     return simplified_products
 

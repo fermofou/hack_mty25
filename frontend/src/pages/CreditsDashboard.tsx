@@ -39,7 +39,7 @@ export default function CreditsPage() {
     <div className='min-h-screen bg-background'>
       <UserTopBar />
 
-      <main className='container mx-auto px-4 py-8'>
+      <main className='container mx-auto px-4 py-8 max-w-[1200px]'>
         {/* Title section - removed back button */}
         <div className='mb-8 flex items-center justify-between'>
           <div>
@@ -50,13 +50,10 @@ export default function CreditsPage() {
               Gestiona y revisa tus créditos sustentables
             </p>
           </div>
-          <BanorteButton
-            variant='primary'
-            onClick={() => router.push('/user/apply')}
-          >
+          <Button variant='primary' onClick={() => navigate('/user/apply')}>
             <Plus className='mr-2 h-4 w-4' />
             Solicitar crédito
-          </BanorteButton>
+          </Button>
         </div>
 
         {mockSustainabilitySavings.length > 0 && (
@@ -192,14 +189,12 @@ export default function CreditsPage() {
                           {credit.purpose}
                         </p>
                       </div>
-                      <BanorteButton
+                      <Button
                         variant='tertiary'
-                        onClick={() =>
-                          router.push(`/user/credits/${credit.id}`)
-                        }
+                        onClick={() => navigate(`/user/credits/${credit.id}`)}
                       >
                         Ver detalles
-                      </BanorteButton>
+                      </Button>
                     </div>
                     <div className='flex gap-6 text-sm'>
                       <div>
@@ -236,12 +231,12 @@ export default function CreditsPage() {
                 <p className='text-muted-foreground mb-4'>
                   No tienes créditos activos
                 </p>
-                <BanorteButton
+                <Button
                   variant='primary'
-                  onClick={() => router.push('/user/apply')}
+                  onClick={() => navigate('/user/apply')}
                 >
                   Solicitar tu primer crédito
-                </BanorteButton>
+                </Button>
               </CardContent>
             </Card>
           ) : (
@@ -250,7 +245,7 @@ export default function CreditsPage() {
                 <Card
                   key={credit.id}
                   className='cursor-pointer transition-shadow hover:shadow-lg'
-                  onClick={() => router.push(`/user/credits/${credit.id}`)}
+                  onClick={() => navigate(`/user/credits/${credit.id}`)}
                 >
                   <CardHeader>
                     <div className='flex items-start justify-between'>

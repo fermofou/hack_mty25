@@ -5,6 +5,8 @@ import LoginPageAdmin from "./pages/LoginPageAdmin";
 import UserDashboard from "./pages/UserDashboard";
 import CreditsDashboard from "./pages/CreditsDashboard";
 import AdminPage from "./pages/AdminPage";
+import ApplyCreditPage from "./pages/ApplyCreditPage";
+//import AdminPage from "./pages/AdminPage";
 
 function App() {
   return (
@@ -16,6 +18,7 @@ function App() {
           <Route path="/admin/dashboard" element={<AdminPage />} />
           <Route path="/user/dashboard" element={<UserDashboard />} />
           <Route path="/user/credits" element={<CreditsDashboard />} />
+          <Route path="/user/credits/apply" element={<ApplyCreditPage />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

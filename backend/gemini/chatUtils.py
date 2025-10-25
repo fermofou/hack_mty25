@@ -83,6 +83,14 @@ def create_credit_offers(conversation_context: str) -> list[CreditOffer]:
        - This shows the pure savings benefit, independent of the loan
        - Express in MXN pesos
     
+    8. PRODUCT DATA (product):
+       - Each credit offer MUST include specific product information
+       - nombre: Specific product name/model (e.g., "Panel Solar 450W Monocristalino", "Tesla Model 3", "Refrigerador Samsung Inverter 18 pies")
+       - link: A realistic product URL (can use placeholder like "https://mercadolibre.com.mx/producto/[id]" or similar Mexican retailer)
+       - img_link: A realistic image URL (can use placeholder like "https://http2.mlstatic.com/D_NQ_NP_[product-id].jpg")
+       - precio: The actual product price in MXN pesos (should match or be close to the prestamo amount)
+       - Ensure the product details match the description and loan amount
+    
     ANALYSIS REQUIREMENTS:
     - Review the user's transaction history to identify current spending patterns
     - Match credit offers to products that address their highest utility expenses
@@ -96,7 +104,7 @@ def create_credit_offers(conversation_context: str) -> list[CreditOffer]:
     
     ---------
     INSTRUCTIONS:
-    Respond with a JSON array of 3 realistic credit offer objects. Each offer should be financially sound and tailored to the user's actual situation and needs.
+    Respond with a JSON array of 3 realistic credit offer objects. Each offer MUST include all fields including the product data (nombre, link, img_link, precio). The product should be specific and tailored to the user's actual situation and needs.
     """
 
     return gemini_structured_response(prompt, CreditOffers)
