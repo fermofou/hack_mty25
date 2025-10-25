@@ -5,6 +5,8 @@ import { UserTopBar } from "@/components/UserTopBar";
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { Card, CardContent } from "@/components/ui/card";
+import { CreditOfferCard } from "@/components/CreditOfferCard";
+import { CreditOfferModal } from "@/components/CreditOfferModal";
 import { Send, Bot, User } from "lucide-react";
 
 interface Message {
@@ -25,6 +27,7 @@ export default function ApplyCreditPage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [creditOffers, setCreditOffers] = useState<any[] | null>(null);
+  const [selectedOffer, setSelectedOffer] = useState<any | null>(null);
 
   // Build conversation_context string from messages
   const buildConversationContext = (msgs: Message[]) => {
@@ -134,20 +137,15 @@ export default function ApplyCreditPage() {
             {creditOffers && (
               <div className="flex flex-row gap-4 justify-center mt-6">
                 {creditOffers.slice(0, 3).map((offer, idx) => (
-                  <Card key={idx} className="w-80 border-2 border-[#EB0029]">
-                    <CardContent className="flex flex-col items-center p-4">
-                      <img src={offer.product.img_link} alt={offer.product.nombre} className="h-32 object-contain mb-2" />
-                      <h3 className="font-bold text-lg text-center mb-1">{offer.product.nombre}</h3>
-                      <p className="text-sm text-center mb-2">{offer.descripcion}</p>
-                      <div className="text-sm mb-1">Monto: <span className="font-semibold">${offer.prestamo}</span></div>
-                      <div className="text-sm mb-1">Interés: <span className="font-semibold">{offer.interes}%</span></div>
-                      <div className="text-sm mb-1">Plazo: <span className="font-semibold">{offer.meses_originales} meses</span></div>
-                      <div className="text-sm mb-1">Pago inicial: <span className="font-semibold">${offer.gasto_inicial_mes}</span></div>
-                      <div className="text-sm mb-1">Pago final: <span className="font-semibold">${offer.gasto_final_mes}</span></div>
-                      <a href={offer.product.link} target="_blank" rel="noopener noreferrer" className="text-[#EB0029] underline mt-2">Ver producto</a>
-                    </CardContent>
-                  </Card>
+                  <CreditOfferCard
+                    key={idx}
+                    offer={offer}
+                    onClick={() => setSelectedOffer(offer)}
+                  />
                 ))}
+                {selectedOffer && (
+                  <CreditOfferModal offer={selectedOffer} onClose={() => setSelectedOffer(null)} />
+                )}
               </div>
             )}
           </CardContent>
