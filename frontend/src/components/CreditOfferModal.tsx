@@ -1,6 +1,7 @@
 import React from "react";
 
 import { Button } from "./Button";
+import { X } from "lucide-react";
 
 interface CreditOfferModalProps {
   offer: any;
@@ -24,13 +25,14 @@ export const CreditOfferModal: React.FC<CreditOfferModalProps> = ({ offer, onClo
         <div className="flex items-center justify-between px-8 pt-8 pb-2">
           <h2 className="text-2xl font-bold text-foreground">Oferta de Crédito</h2>
           <button
-            className="text-gray-700 hover:text-gray-900 text-3xl font-bold"
+            className="cursor-pointer text-gray-500 hover:text-gray-700 rounded-full p-1.5 transition-colors border border-transparent hover:border-gray-300"
             onClick={onClose}
             aria-label="Cerrar"
           >
-            &times;
+            <X size={24} />
           </button>
         </div>
+        <div className="border-b border-gray-200 mx-8 mb-4" />
         {/* Main content */}
         <div className="px-8 pb-8 flex flex-col gap-4">
           <div className="flex flex-row gap-6 items-center mb-2">
