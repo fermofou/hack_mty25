@@ -1,16 +1,38 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
-from sqlmodel import select
+from sqlmodel import select, or_
 
 from config import get_session
-
 from models.admin import Admin, AdminCreate, AdminRead, AdminUpdate
 from models.credito import Credito, CreditoUpdate
 from models.cliente import Cliente
 from models.item import Item
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
+
+# Signup endpoint para Admin
+@router.post("/signup", response_model=AdminRead)
+async def admin_signup(admin_in: AdminCreate, session: AsyncSession = Depends(get_session)):
+    result = await session.execute(select(Admin).where(Admin.username == admin_in.username))
+    existing = result.scalar_one_or_none()
+    if existing:
+        raise HTTPException(status_code=400, detail="Username already exists")
+    db_admin = Admin(**admin_in.dict())
+    session.add(db_admin)
+    await session.commit()
+    await session.refresh(db_admin)
+    return db_admin
+
+# Login endpoint para Admin
+@router.post("/login", response_model=AdminRead)
+async def admin_login(username: str, pwd: str, session: AsyncSession = Depends(get_session)):
+    statement = select(Admin).where(Admin.username == username, Admin.pwd == pwd)
+    result = await session.execute(statement)
+    admin = result.scalar_one_or_none()
+    if not admin:
+        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+    return admin
 
 @router.post("/", response_model=AdminRead, tags=["Admins"])
 async def create_admin(
