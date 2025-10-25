@@ -9,13 +9,19 @@ from models.transacciones import Transaccion, TransaccionCreate, TransaccionRead
 router = APIRouter(prefix="/transacciones", tags=["Transacciones"])
 
 @router.post("/", response_model=TransaccionRead)
-async def create_transaccion(transaccion_in: TransaccionCreate, session: AsyncSession = Depends(get_session)):
-    """Crea una nueva transacción para un cliente."""
-    db_transaccion = Transaccion.from_orm(transaccion_in)
-    session.add(db_transaccion)
+async def create_transaccion(trans_in: TransaccionCreate, session: AsyncSession = Depends(get_session)):
+    """Crea una nueva transacción."""
+    db_trans = Transaccion.from_orm(trans_in)
+    
+    # Convertir fecha a naïve si viene con tzinfo
+    if db_trans.fecha and db_trans.fecha.tzinfo:
+        db_trans.fecha = db_trans.fecha.replace(tzinfo=None)
+    
+    session.add(db_trans)
     await session.commit()
-    await session.refresh(db_transaccion)
-    return db_transaccion
+    await session.refresh(db_trans)
+    return db_trans
+
 
 @router.get("/", response_model=List[TransaccionRead])
 async def read_transacciones(skip: int = 0, limit: int = 100, session: AsyncSession = Depends(get_session)):
