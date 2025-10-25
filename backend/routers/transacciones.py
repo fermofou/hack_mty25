@@ -24,12 +24,15 @@ async def create_transaccion(trans_in: TransaccionCreate, session: AsyncSession 
     return db_trans
 
 # Nuevo endpoint: crea transacción y descuenta saldo del cliente
-@router.post("/registrar", response_model=TransaccionRead)
+
+from models.cliente import Cliente, ClienteRead
+
+@router.post("/registrar")
 async def registrar_transaccion(trans_in: TransaccionCreate, session: AsyncSession = Depends(get_session)):
     """
     Crea una transacción, descuenta el monto del cliente y verifica fondos suficientes.
+    Devuelve la transacción y el cliente actualizado.
     """
-    from models.cliente import Cliente
     # Obtener cliente
     cliente = await session.get(Cliente, trans_in.cliente_id)
     if not cliente:
@@ -48,7 +51,11 @@ async def registrar_transaccion(trans_in: TransaccionCreate, session: AsyncSessi
     session.add(db_trans)
     await session.commit()
     await session.refresh(db_trans)
-    return db_trans
+    await session.refresh(cliente)
+    return {
+        "transaccion": TransaccionRead.model_validate(db_trans).model_dump(),
+        "cliente": ClienteRead.model_validate(cliente).model_dump()
+    }
 
 
 @router.get("/", response_model=List[TransaccionRead])
