@@ -64,7 +64,7 @@ def search_products(query, page=1, country="mx"):
             link=p.get("link", ""),
             img_link=p.get("imageUrl", ""),
             precio=parse_price(p.get("price", "")),
-            category="Luz",  # TODO: Just a placeholder
+            categoria="Luz",  # TODO: Just a placeholder
         )
         for p in products_data[:20]
     ]

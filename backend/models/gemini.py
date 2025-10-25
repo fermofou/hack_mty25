@@ -22,7 +22,7 @@ class ProductData(BaseModel):
     link: str
     img_link: str
     precio: float
-    category: str  # Main topics are "Agua", "Luz", "Gas", "Transporte"
+    categoria: str  # Main topics are "Agua", "Luz", "Gas", "Transporte"
 
 
 class CreditOffer(BaseModel):

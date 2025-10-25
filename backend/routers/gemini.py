@@ -86,11 +86,7 @@ async def process_message(
         # Search for related products
         product_query = response_type_data["object_in_response"]
         products = search_products(product_query)
-        print()
-        print("products", products)
         conv_context = await get_conversation_context(request, session, products)
-        print()
-        print("conv_context", conv_context)
         # This is the function where it takes the most time to run.
         offers = create_credit_offers(conv_context)
 
