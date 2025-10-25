@@ -83,13 +83,6 @@ export const CreditOfferModal: React.FC<CreditOfferModalProps> = ({ offer, onClo
             >
               Pedir crédito
             </Button>
-            <Button
-              variant="secondary"
-              className="flex-1 text-base py-3"
-              onClick={onClose}
-            >
-              Cerrar
-            </Button>
           </div>
         </div>
       </div>
