@@ -64,7 +64,6 @@ export default function CreditsPage() {
             </p>
           </div>
           <Button variant='primary' onClick={() => navigate('/user/apply')}>
-            <Plus className='mr-2 h-4 w-4' />
             Solicitar crédito
           </Button>
         </div>
@@ -115,7 +114,7 @@ export default function CreditsPage() {
                               {credit.purpose}
                             </p>
                           </div>
-                          <Badge className='bg-[#FFA500] text-white'>
+                          <Badge className='bg-orange-600 text-white'>
                             Pendiente
                           </Badge>
                         </div>
@@ -166,7 +165,7 @@ export default function CreditsPage() {
                               ${credit.amount.toLocaleString('es-MX')}
                             </CardTitle>
                           </div>
-                          <Badge className='bg-[#6CC04A] text-white'>
+                          <Badge className='bg-green-600 text-white'>
                             Activo
                           </Badge>
                         </div>

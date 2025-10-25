@@ -9,7 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 export function UserTopBar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { logout: signout } = useAuth();
 
   const navItems = [
     { href: '/user/dashboard', label: 'Inicio', icon: Home },
@@ -19,7 +19,7 @@ export function UserTopBar() {
 
   const logout = () => {
     navigate('/');
-    login(null);
+    signout();
   };
 
   return (
