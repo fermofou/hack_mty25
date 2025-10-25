@@ -84,7 +84,8 @@ function TransactionList() {
               <>
                 {filteredTransactions.length === 0 ? (
                   <div className='p-8 text-center text-muted-foreground'>
-                    No hay transacciones en esta categoría
+                    No hay transacciones
+                    {selectedCategory !== 'all' ? ' en esta categoría' : ''}
                   </div>
                 ) : (
                   filteredTransactions.map((transaction) => (
