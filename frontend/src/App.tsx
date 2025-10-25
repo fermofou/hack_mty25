@@ -5,8 +5,6 @@ import LoginPageAdmin from './pages/LoginPageAdmin';
 import UserDashboard from './pages/UserDashboard';
 import CreditsDashboard from './pages/CreditsDashboard';
 import AdminPage from './pages/AdminPage';
-import ApplyCreditPage from './pages/ApplyCreditPage';
-//import AdminPage from "./pages/AdminPage";
 
 function App() {
   return (

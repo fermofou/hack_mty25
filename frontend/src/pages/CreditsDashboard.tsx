@@ -287,7 +287,7 @@ export default function CreditsPage() {
 
                 {/* Impact metrics - Now below chart */}
                 <div className='grid gap-4 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-1'>
-                  <Card className='border border-gray-200 shadow-lg'>
+                  <Card className='border border-gray-200 shadow-sm'>
                     <CardHeader className='pb-2'>
                       <CardTitle className='text-sm font-medium text-muted-foreground'>
                         Ahorro mensual estimado
@@ -303,7 +303,7 @@ export default function CreditsPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className='border border-gray-200 shadow-lg'>
+                  <Card className='border border-gray-200 shadow-sm'>
                     <CardHeader className='pb-2'>
                       <CardTitle className='text-sm font-medium text-muted-foreground'>
                         Reducción de CO₂
@@ -320,7 +320,7 @@ export default function CreditsPage() {
                   </Card>
 
                   {/* New Water Savings Card */}
-                  <Card className='border border-gray-200 shadow-lg'>
+                  <Card className='border border-gray-200 shadow-sm'>
                     <CardHeader className='pb-2'>
                       <CardTitle className='text-sm font-medium text-muted-foreground'>
                         Agua ahorrada
