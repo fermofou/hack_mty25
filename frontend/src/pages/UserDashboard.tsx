@@ -30,8 +30,8 @@ export default function UserDashboard() {
   const [isGreenCreditExpanded, setIsGreenCreditExpanded] = useState(false);
 
   useEffect(() => {
-    if (user && user.type !== 'user') {
-      navigate('/admin/dashboard');
+    if (!user) {
+      navigate('/');
     }
   }, [user, navigate]);
 
@@ -73,7 +73,7 @@ export default function UserDashboard() {
         {/* Welcome section */}
         <div className='mb-8'>
           <h1 className='text-3xl font-bold text-foreground mb-2'>
-            Hola, {user.name.split(' ')[0]}
+            Hola, {user.nombre.split(' ')[0]}
           </h1>
           <p className='text-muted-foreground'>
             Aquí está el resumen de tu cuenta
@@ -92,11 +92,10 @@ export default function UserDashboard() {
               <div>
                 <p className='text-4xl font-bold mb-2'>
                   $
-                  {user.balance.toLocaleString('es-MX', {
+                  {user.saldo.toLocaleString('es-MX', {
                     minimumFractionDigits: 2,
                   })}
                 </p>
-                <p className='text-white/80 text-sm'>{user.accountNumber}</p>
               </div>
             </div>
           </CardContent>
