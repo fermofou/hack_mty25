@@ -10,8 +10,14 @@ interface CreditOfferModalProps {
 export const CreditOfferModal: React.FC<CreditOfferModalProps> = ({ offer, onClose }) => {
   if (!offer) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-10 relative pointer-events-auto border-2 border-gray-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Blurred overlay */}
+      <div
+        className="absolute inset-0 bg-white/40 backdrop-blur-sm transition-all duration-200 cursor-pointer"
+        onClick={onClose}
+        aria-label="Cerrar fondo"
+      />
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-10 relative pointer-events-auto border-2 border-gray-200 z-10">
         <button
           className="absolute top-4 right-4 text-gray-700 hover:text-gray-900 text-3xl font-bold"
           onClick={onClose}
