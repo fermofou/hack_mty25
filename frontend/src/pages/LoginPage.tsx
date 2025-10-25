@@ -1,22 +1,21 @@
 import type React from 'react';
 
-
-
 import { useState } from 'react';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { useNavigate } from 'react-router';
-import axios from 'axios';
+import { AxiosError } from 'axios';
+import { api } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
-
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const { login } = useAuth();
   const navigate = useNavigate();
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,30 +23,26 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL;
-      try {
-        const { data } = await axios.post(
-          `${apiUrl}/clientes/login`,
-          { username, pwd: password },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-        // You may want to store user info/token here
-        console.log("login successful", data);
-        navigate('/user/dashboard');
-      } catch (err: any) {
-        console.log("broke with username:", username, "password:", password);
-        if (err.response && err.response.data && err.response.data.detail) {
+      const { data } = await api.post('clientes/login', {
+        username,
+        pwd: password,
+      });
+      console.log(data);
+      navigate('/user/dashboard');
+      login(data);
+    } catch (err) {
+      console.log('broke with username:', username, 'password:', password);
+
+      // Type guard for axios errors
+      if (err instanceof AxiosError) {
+        if (err.response?.data?.detail) {
           setError(err.response.data.detail);
         } else {
           setError('Error al iniciar sesión');
         }
+      } else {
+        setError('Error al iniciar sesión');
       }
-    } catch (err) {
-      setError('No se pudo conectar al servidor');
     } finally {
       setIsLoading(false);
     }
@@ -68,15 +63,12 @@ export default function LoginPage() {
           </p>
 
           <form onSubmit={handleSubmit} className='space-y-6'>
-
             <Input
               label='Nombre de Usuario'
               type='text'
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              showClearButton
-              onClear={() => setUsername('')}
             />
 
             <Input
@@ -86,8 +78,6 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               error={error}
               required
-              showClearButton
-              onClear={() => setPassword('')}
             />
 
             <div className='flex items-center justify-between'>

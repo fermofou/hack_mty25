@@ -8,8 +8,6 @@ export interface InputProps
   helperText?: string;
   maxLength?: number;
   showCounter?: boolean;
-  showClearButton?: boolean;
-  onClear?: () => void;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
@@ -22,26 +20,90 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       helperText,
       maxLength,
       showCounter,
-      showClearButton,
-      onClear,
       value,
       ...props
     },
     ref
   ) => {
+    const [hasContent, setHasContent] = React.useState(false);
+    const inputRef = React.useRef<HTMLInputElement>(null);
+
+    // Combine refs
+    React.useImperativeHandle(ref, () => inputRef.current!);
+
     const currentLength = value ? String(value).length : 0;
     const showCount = showCounter && maxLength;
 
-    props.placeholder = ' ';
+    // Check for autofilled content
+    React.useEffect(() => {
+      const currentInput = inputRef.current;
+
+      const checkAutofill = () => {
+        if (currentInput) {
+          const hasValue = currentInput.value !== '';
+          const isAutofilled =
+            currentInput.matches(':-webkit-autofill') ||
+            currentInput.matches(':autofill');
+          setHasContent(hasValue || isAutofilled);
+        }
+      };
+
+      // Check immediately
+      checkAutofill();
+
+      // Set up observers for autofill detection
+      const interval = setInterval(checkAutofill, 100);
+
+      // Also check on animation events (some browsers trigger this on autofill)
+      const handleAnimationStart = (e: AnimationEvent) => {
+        if (e.animationName === 'onAutoFillStart') {
+          setHasContent(true);
+        }
+      };
+
+      if (currentInput) {
+        currentInput.addEventListener('animationstart', handleAnimationStart);
+      }
+
+      return () => {
+        clearInterval(interval);
+        if (currentInput) {
+          currentInput.removeEventListener(
+            'animationstart',
+            handleAnimationStart
+          );
+        }
+      };
+    }, []);
+
+    // Update hasContent when value changes
+    React.useEffect(() => {
+      setHasContent(value !== '' && value !== undefined);
+    }, [value]);
+
+    const shouldFloatLabel = hasContent || value !== '' || value !== undefined;
 
     return (
       <div className='w-full relative group'>
+        <style>{`
+          /* CSS for autofill detection */
+          @keyframes onAutoFillStart {
+            from { }
+            to { }
+          }
+          
+          input:-webkit-autofill {
+            animation-name: onAutoFillStart;
+            animation-duration: 0.001s;
+          }
+        `}</style>
+
         {label && (
           <label
             className={cn(
               'text-[#5B6670] absolute z-10 ml-[20px] pb-1 h-full flex items-center pointer-events-none transition-all font-medium group-focus-within:font-normal group-focus-within:text-[12px] group-focus-within:translate-y-[-12px]',
               {
-                'font-normal text-[12px] translate-y-[-12px]': value !== '',
+                'font-normal text-[12px] translate-y-[-12px]': shouldFloatLabel,
               }
             )}
           >
@@ -49,10 +111,11 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           </label>
         )}
         <input
+          ref={inputRef}
           type={type}
           maxLength={maxLength}
           className={cn(
-            'flex h-[50px] w-full bg-[#F6F6F6] pl-[20px] pr-[30px] pt-[20px] text-[15px] text-[#323E48] placeholder:text-[#C1C5C8]',
+            'flex h-[50px] w-full bg-[#F6F6F6] pl-[20px] pr-[30px] pt-[20px] text-[15px] text-[#323E48] placeholder:text-transparent',
             'border-0 border-b-2 border-[#323E48] rounded-none',
             'focus-visible:outline-none focus-visible:border-[#EB0029]',
             'disabled:cursor-not-allowed disabled:text-[#C1C5C8]',
@@ -61,19 +124,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             className
           )}
           style={{ fontFamily: 'Gotham, sans-serif', fontWeight: 500 }}
-          ref={ref}
           value={value}
+          placeholder=' '
           {...props}
         />
-        {showClearButton && value && (
-          <button
-            type='button'
-            onClick={onClear}
-            className='absolute right-3 top-1/2 -translate-y-1/2 text-[#323E48] hover:text-[#EB0029] transition-colors cursor-pointer'
-          >
-            &times;
-          </button>
-        )}
         <div className='flex items-center justify-between mt-1.5'>
           <div className='flex-1'>
             {helperText && !error && (

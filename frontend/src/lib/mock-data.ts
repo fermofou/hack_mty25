@@ -9,7 +9,7 @@ export type TransactionCategory =
 // Transaction type
 export interface Transaction {
   id: string;
-  userId: string;
+  userId: number;
   description: string;
   amount: number;
   type: 'credit' | 'debit';
@@ -23,7 +23,7 @@ export type CreditStatus = 'pending' | 'approved' | 'rejected';
 // Credit interface
 export interface Credit {
   id: string;
-  userId: string;
+  userId: number;
   amount: number;
   remainingBalance: number;
   monthlyPayment: number;
@@ -38,7 +38,7 @@ export interface Credit {
 export const mockCredits: Credit[] = [
   {
     id: 'credit-1',
-    userId: 'user-1',
+    userId: 1,
     amount: 50000,
     remainingBalance: 32500,
     monthlyPayment: 2500,
@@ -50,7 +50,7 @@ export const mockCredits: Credit[] = [
   },
   {
     id: 'credit-2',
-    userId: 'user-1',
+    userId: 1,
     amount: 25000,
     remainingBalance: 18750,
     monthlyPayment: 1500,
@@ -66,7 +66,7 @@ export const mockCredits: Credit[] = [
 export const mockTransactions: Transaction[] = [
   {
     id: 'trans-1',
-    userId: 'user-1',
+    userId: 1,
     description: 'Pago de electricidad con panel solar',
     amount: -850,
     type: 'debit',
@@ -75,7 +75,7 @@ export const mockTransactions: Transaction[] = [
   },
   {
     id: 'trans-2',
-    userId: 'user-1',
+    userId: 1,
     description: 'Cashback crédito verde',
     amount: 125,
     type: 'credit',
@@ -84,7 +84,7 @@ export const mockTransactions: Transaction[] = [
   },
   {
     id: 'trans-3',
-    userId: 'user-1',
+    userId: 1,
     description: 'Recarga metro ecológica',
     amount: -45,
     type: 'debit',
@@ -93,7 +93,7 @@ export const mockTransactions: Transaction[] = [
   },
   {
     id: 'trans-4',
-    userId: 'user-1',
+    userId: 1,
     description: 'Pago de agua',
     amount: -320,
     type: 'debit',
@@ -102,7 +102,7 @@ export const mockTransactions: Transaction[] = [
   },
   {
     id: 'trans-5',
-    userId: 'user-1',
+    userId: 1,
     description: 'Recompensa ahorro energético',
     amount: 75,
     type: 'credit',

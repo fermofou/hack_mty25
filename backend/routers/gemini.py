@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
+from models.products import ProductResponse
 from config import get_session
 from models.cliente import Cliente
 from models.transacciones import Transaccion
-from models.gemini import GeminiRequest
+from models.gemini import ChatMessageResponse, GeminiRequest
 
 # Import from gemini module
-from gemini.chatUtils import determine_response_type
+from gemini.chatUtils import create_credit_offers, determine_response_type
 from gemini.baseGeminiQueries import gemini_basic_response
 
 # Import from .products
@@ -17,7 +18,9 @@ router = APIRouter(prefix="/gemini", tags=["Gemini"])
 
 
 async def get_conversation_context(
-    request: GeminiRequest, session: AsyncSession
+    request: GeminiRequest,
+    session: AsyncSession,
+    products: list[ProductResponse] | None = None,
 ) -> str:
     # Get user data
     user = await session.get(Cliente, request.user_id)
@@ -38,6 +41,13 @@ async def get_conversation_context(
     else:
         transacciones_str = "No transactions recorded."
 
+    # Format products if provided (optional)
+    if products:
+        prod_list = [str(p) for p in products]
+        products_str = "Related products:\n" + "\n".join(prod_list)
+    else:
+        products_str = ""
+
     # Build context
     context = (
         f"Here is the user's data: {user_info}\n"
@@ -45,11 +55,14 @@ async def get_conversation_context(
         f"This is the previous conversation: {request.conversation_context}\n"
         f"And this was their last message to you: {request.last_message}"
     )
+    if products_str:
+        context += f"{products_str}\n"
+
     return context
 
 
 @router.post("/chat")
-async def gemini_chat_endpoint(
+async def get_conversation_context_endpoint(
     request: GeminiRequest, session: AsyncSession = Depends(get_session)
 ):
     """
@@ -59,27 +72,30 @@ async def gemini_chat_endpoint(
     return await get_conversation_context(request, session)
 
 
-async def process_message(message: GeminiRequest) -> dict:
+async def process_message(
+    request: GeminiRequest, session: AsyncSession
+) -> ChatMessageResponse:
     """
     Processes a user message by determining its type and responding appropriately.
     If type is 'text', returns a Gemini response.
     If type is 'credit', searches for related products and returns the first 3.
     """
     # Determine message type
-    response_type_data = determine_response_type(message)
-
+    response_type_data = determine_response_type(request.last_message)
     if response_type_data["response_type"] == "credit":
         # Search for related products
         product_query = response_type_data["object_in_response"]
         products = search_products(product_query)
+        conv_context = await get_conversation_context(request, session, products)
+        # This is the function where it takes the most time to run.
+        offers = create_credit_offers(conv_context)
 
         return {
             "response_type": "credit",
             "object_in_response": product_query,
-            "products": products[:3],  # Return only the first 3
+            "creditOffers": offers,
         }
     else:  # response_type == "text" or any other
-        # Normal text response using Gemini
         context = """
         CONTEXT:
         You are an expert environmental and sustainable finance assistant. Your role is to provide accurate, helpful information about:
@@ -100,16 +116,18 @@ async def process_message(message: GeminiRequest) -> dict:
         ------
         USER MESSAGE:
         """
-        gemini_response = gemini_basic_response(context + message)
+        gemini_response = gemini_basic_response(context + request)
         return {"response_type": "text", "text_response": gemini_response}
 
 
 @router.post("/process")
-async def process_message_endpoint(request: GeminiRequest):
+async def process_message_endpoint(
+    request: GeminiRequest, session: AsyncSession = Depends(get_session)
+):
     """
     Endpoint that receives a user message and:
     - Determines if it's a general inquiry (text) or about credits for green products (credit)
     - If 'text': returns a Gemini response
     - If 'credit': searches for related products and returns the first 3
     """
-    return await process_message(request.message)
+    return await process_message(request, session)

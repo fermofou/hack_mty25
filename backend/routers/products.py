@@ -58,13 +58,13 @@ def search_products(query, page=1, country="mx"):
 
     products_data = json.loads(data.decode("utf-8")).get("products", [])
 
-    simplified_products = [
-        {
-            "nombre": p.get("title", ""),
-            "link": p.get("link", ""),
-            "img_link": p.get("imageUrl", ""),
-            "precio": parse_price(p.get("price", "")),
-        }
+    simplified_products: List[ProductResponse] = [
+        ProductResponse(
+            nombre=p.get("title", ""),
+            link=p.get("link", ""),
+            img_link=p.get("imageUrl", ""),
+            precio=parse_price(p.get("price", "")),
+        )
         for p in products_data[:20]
     ]
 
