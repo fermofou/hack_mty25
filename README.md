@@ -132,25 +132,6 @@ La integración se realiza a través de módulos dedicados en el backend (`backe
 
 ---
 
-## Diagrama Simplificado
-
-```mermaid
-graph TD
-    subgraph Frontend
-        A[LoginPage] -->|POST /clientes/login| B[API Backend]
-        D[UserDashboard] -->|GET /clientes/{id}/creditos| B
-        D -->|POST /transacciones/registrar| B
-        F[Chat Gemini AI] -->|POST /gemini/chat| B
-    end
-    subgraph Backend
-        B --> C[DB: Clientes, Creditos, Items, Transacciones, Admin]
-        B --> E[API Productos Externos]
-        B --> G[Gemini AI]
-    end
-```
-
----
-
 ## Créditos
 
 Proyecto realizado para HackMTY 2025 por el equipo Banorte Verde.
