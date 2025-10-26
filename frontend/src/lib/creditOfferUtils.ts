@@ -1,4 +1,4 @@
-import { api } from "./api";
+import { api } from './api';
 
 export interface ProductData {
   nombre: string;
@@ -16,6 +16,7 @@ export interface CreditOffer {
   gasto_inicial_mes: number;
   gasto_final_mes: number;
   product: ProductData;
+  id_cred: number;
 }
 
 export interface PreapprovedCreditsResponse {
@@ -72,7 +73,7 @@ export async function fetchPreapprovedCredits(
     );
     return response.data.creditOffers || [];
   } catch (error) {
-    console.error("Error fetching preapproved credits:", error);
+    console.error('Error fetching preapproved credits:', error);
     return [];
   }
 }
@@ -89,7 +90,7 @@ export async function getPreapprovedContext(
     );
     return response.data;
   } catch (error) {
-    console.error("Error getting preapproved context:", error);
+    console.error('Error getting preapproved context:', error);
     return null;
   }
 }
@@ -107,7 +108,7 @@ export async function generateCreditOffers(
     );
     return response.data;
   } catch (error) {
-    console.error("Error generating credit offers:", error);
+    console.error('Error generating credit offers:', error);
     return null;
   }
 }
@@ -125,7 +126,7 @@ export async function savePreapprovedCredits(
     );
     return response.data;
   } catch (error) {
-    console.error("Error saving preapproved credits:", error);
+    console.error('Error saving preapproved credits:', error);
     return null;
   }
 }
@@ -144,7 +145,7 @@ export async function createPreapprovedCredits(
       return null;
     }
     if (!context) {
-      throw new Error("Failed to get preapproved context");
+      throw new Error('Failed to get preapproved context');
     }
 
     // Step 2: Generate credit offers using AI
@@ -153,7 +154,7 @@ export async function createPreapprovedCredits(
       num_offers_to_generate: context.num_offers_to_generate,
     });
     if (!creditOffers) {
-      throw new Error("Failed to generate credit offers");
+      throw new Error('Failed to generate credit offers');
     }
 
     // Step 3: Save to database
@@ -162,12 +163,12 @@ export async function createPreapprovedCredits(
       credit_offers: creditOffers,
     });
     if (!saveResult) {
-      throw new Error("Failed to save credit offers");
+      throw new Error('Failed to save credit offers');
     }
 
     return saveResult;
   } catch (error) {
-    console.error("Error creating preapproved credits:", error);
+    console.error('Error creating preapproved credits:', error);
     return null;
   }
 }
@@ -188,11 +189,11 @@ export function transformCreditOffer(
       : 0;
 
   return {
-    title: apiOffer.product?.nombre || apiOffer.descripcion.split(".")[0],
-    subtitle: apiOffer.product?.nombre || "Producto",
-    description: apiOffer.descripcion.split(".").slice(0, 2).join("."),
+    title: apiOffer.product?.nombre || apiOffer.descripcion.split('.')[0],
+    subtitle: apiOffer.product?.nombre || 'Producto',
+    description: apiOffer.descripcion.split('.').slice(0, 2).join('.'),
     detailedDescription: apiOffer.descripcion,
-    maxAmountText: `Hasta $${apiOffer.prestamo.toLocaleString("es-MX", {
+    maxAmountText: `Hasta $${apiOffer.prestamo.toLocaleString('es-MX', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })} MXN`,
@@ -205,12 +206,12 @@ export function transformCreditOffer(
       monthlyPayment: monthlyPayment,
     },
     benefits: [
-      "Sin comisión por apertura",
-      "Instalación incluida",
-      "Garantía 25 años",
+      'Sin comisión por apertura',
+      'Instalación incluida',
+      'Garantía 25 años',
     ],
     disclaimerText: `*Ahorro estimado basado en la reducción de ${
-      apiOffer.gasto_inicial_mes > 0 ? `$${savings.toFixed(2)}` : "costos"
+      apiOffer.gasto_inicial_mes > 0 ? `$${savings.toFixed(2)}` : 'costos'
     } mensuales.`,
   };
 }
