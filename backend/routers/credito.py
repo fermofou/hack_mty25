@@ -5,7 +5,7 @@ from sqlmodel import select
 
 from models.gemini import CreditOffers
 from config import get_session
-from models.credito import Credito, CreditoCreate, CreditoRead, CreditoUpdate
+from models.credito import Credito, CreditoCreate, CreditoRead, CreditoUpdate, CreditoConNombreCliente
 from models.item import Item
 from models.cliente import Cliente, ClienteRead
 from pydantic import BaseModel
@@ -123,6 +123,47 @@ async def read_creditos(
     result = await session.execute(statement)
     creditos = result.scalars().all()
     return creditos
+
+
+@router.get("/todos", response_model=List[CreditoConNombreCliente], tags=["Creditos"])
+async def get_all_creditos_with_client_info(
+    skip: int = 0, 
+    limit: int = 100, 
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Obtiene todos los créditos con información del cliente (nombre, apellido, credit_score).
+    Hace JOIN entre la tabla creditos y clientes usando cliente_id.
+    """
+    # Query con JOIN entre Credito y Cliente, ordenado por fecha_inicio descendente
+    statement = (
+        select(Credito, Cliente.nombre, Cliente.apellido, Cliente.credit_score)
+        .join(Cliente, Credito.cliente_id == Cliente.id)
+        .order_by(Credito.fecha_inicio.desc())
+        .offset(skip)
+        .limit(limit)
+    )
+    
+    result = await session.execute(statement)
+    rows = result.all()
+    
+    # Construir la respuesta usando el modelo CreditoConNombreCliente
+    creditos_con_info = []
+    for row in rows:
+        credito = row[0]  # El objeto Credito
+        nombre = row[1]   # Cliente.nombre
+        apellido = row[2] # Cliente.apellido
+        credit_score = row[3] # Cliente.credit_score
+        
+        credito_con_info = CreditoConNombreCliente(
+            credito=CreditoRead.model_validate(credito),
+            cliente_nombre=nombre,
+            cliente_apellido=apellido,
+            cliente_credit_score=credit_score or 0.0  # Default 0.0 si es None
+        )
+        creditos_con_info.append(credito_con_info)
+    
+    return creditos_con_info
 
 
 @router.get("/{credito_id}", response_model=CreditoRead, tags=["Creditos"])

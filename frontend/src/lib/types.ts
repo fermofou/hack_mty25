@@ -16,6 +16,14 @@ export interface Credito {
   fecha_inicio: string;
 }
 
+// Crédito con información del cliente para admin
+export interface CreditoConNombreCliente {
+  credito: Credito;
+  cliente_nombre: string;
+  cliente_apellido: string;
+  cliente_credit_score: number;
+}
+
 export interface Transaction {
   cliente_id: number;
   monto: number;
