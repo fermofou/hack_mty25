@@ -30,7 +30,7 @@ function TransactionList() {
 
   if (!user) return null;
 
-  const categoryList = ['Luz', 'Gas', 'Agua', 'Transporte'];
+  const categoryList = ['Luz', 'Gas', 'Agua', 'Transporte', 'Credito Verde'];
 
   const filteredTransactions =
     (selectedCategory === 'all'
@@ -47,6 +47,7 @@ function TransactionList() {
     { value: 'Transporte', label: 'Transporte' },
     { value: 'Agua', label: 'Agua' },
     { value: 'Gas', label: 'Gas' },
+    { value: 'Credito Verde', label: 'Credito Verde' },
     { value: '_', label: 'Otros' },
   ];
 
@@ -131,6 +132,8 @@ function TransactionList() {
                                     ? '#cffafe' // cyan-100
                                     : transaction.categoria === 'Gas'
                                     ? '#fed7aa' // orange-100
+                                    : transaction.categoria === 'Credito Verde'
+                                    ? '#bbf7d0' // green-100
                                     : '#f3f4f6', // gray-100 (default)
                                 color:
                                   transaction.categoria === 'Luz'
@@ -141,6 +144,8 @@ function TransactionList() {
                                     ? '#155e75' // cyan-800
                                     : transaction.categoria === 'Gas'
                                     ? '#9a3412' // orange-800
+                                    : transaction.categoria === 'Credito Verde'
+                                    ? '#166534' // green-800
                                     : '#1f2937', // gray-800 (default)
                               }}
                             >
