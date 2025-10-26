@@ -23,15 +23,7 @@ ssl_context.verify_mode = ssl.CERT_NONE
 engine = create_async_engine(
     DATABASE_URL,
     echo=True,
-    # Connection pool tuning: reduce default pool size to avoid many idle connections
-    # Default asyncpg pool often leaves ~5 idle connections. Adjust pool_size and
-    # max_overflow to limit how many DB connections SQLAlchemy will keep open.
-    # pool_pre_ping helps detect and recycle dead connections.
     connect_args={"ssl": ssl_context},
-    pool_size=3,
-    max_overflow=2,
-    pool_timeout=30,
-    pool_pre_ping=True,
 )
 
 AsyncSessionLocal = sessionmaker(
