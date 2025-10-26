@@ -91,7 +91,7 @@ async def pagar_credito(
     nueva_transaccion = Transaccion(
         cliente_id=pago.cliente_id,
         monto=pago.monto,
-        categoria="Otros",
+        categoria="Credito Verde",
         descripcion=f"Pago realizado al crédito #{pago.credito_id}",
         fecha=datetime.utcnow(),
     )
