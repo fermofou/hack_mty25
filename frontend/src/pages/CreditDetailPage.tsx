@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { Link } from 'react-router';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from 'react-hot-toast';
 import { UserTopBar } from '@/components/UserTopBar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -96,9 +97,9 @@ export default function CreditDetailPage() {
           (window as any).setUser(updatedUser);
         }
       }
-      alert(`Pago procesado: $${monto.toLocaleString('es-MX')}`);
+  toast.success(`Pago procesado: $${monto.toLocaleString('es-MX')}`);
     } catch (err) {
-      alert('Error al procesar el pago. Intenta de nuevo.');
+      toast.error('Error al procesar el pago. Intenta de nuevo.');
       console.error(err);
     } finally {
       setIsProcessing(false);
