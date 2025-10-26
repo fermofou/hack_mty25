@@ -84,6 +84,19 @@ async def pagar_credito(
         .values(pagado=credito.pagado + pago.monto)
     )
     print("10")
+
+
+    # Crear transacción de pago con fecha actual
+    from datetime import datetime
+    nueva_transaccion = Transaccion(
+        cliente_id=pago.cliente_id,
+        monto=pago.monto,
+        categoria="Otros",
+        descripcion=f"Pago realizado al crédito #{pago.credito_id}",
+        fecha=datetime.utcnow(),
+    )
+    session.add(nueva_transaccion)
+
     await session.commit()
     print("11")
     # Refrescar desde base de datos
