@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { Link } from 'react-router';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from 'react-hot-toast';
 import { UserTopBar } from '@/components/UserTopBar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -76,9 +77,10 @@ export default function CreditDetailPage() {
   const handlePayment = async () => {
     if (!credit || !user) return;
     setIsProcessing(true);
-    const monto = paymentType === 'monthly'
-      ? credit.gasto_inicial_mes
-      : Number(customAmount);
+    const monto =
+      paymentType === 'monthly'
+        ? credit.gasto_inicial_mes
+        : Number(customAmount);
     try {
       const { data } = await api.post('/creditos/pagar', {
         credito_id: credit.id_cred,
@@ -96,9 +98,9 @@ export default function CreditDetailPage() {
           (window as any).setUser(updatedUser);
         }
       }
-      alert(`Pago procesado: $${monto.toLocaleString('es-MX')}`);
+  toast.success(`Pago procesado: $${monto.toLocaleString('es-MX')}`);
     } catch (err) {
-      alert('Error al procesar el pago. Intenta de nuevo.');
+      toast.error('Error al procesar el pago. Intenta de nuevo.');
       console.error(err);
     } finally {
       setIsProcessing(false);
@@ -218,12 +220,7 @@ export default function CreditDetailPage() {
                       <div className='flex justify-between text-xs text-muted-foreground mb-1'>
                         <span>Progreso</span>
                         <span>
-                          {Math.round(
-                            ((credit.meses_originales - remainingMonths) /
-                              credit.meses_originales) *
-                              100
-                          )}
-                          %
+                          {Math.round((credit.pagado / credit.prestamo) * 100)}%
                         </span>
                       </div>
                       <div className='h-2 bg-secondary rounded-full overflow-hidden'>
@@ -231,9 +228,7 @@ export default function CreditDetailPage() {
                           className='h-full bg-[#EB0029]'
                           style={{
                             width: `${
-                              ((credit.meses_originales - remainingMonths) /
-                                credit.meses_originales) *
-                              100
+                              (credit.pagado / credit.prestamo) * 100
                             }%`,
                           }}
                         />
