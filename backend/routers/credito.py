@@ -529,85 +529,57 @@ async def save_preapproved_credits(
     }
 
 
-# DEPRECATED Legacy endpoint that does all steps in one call
 @router.post("/preapproved/{cliente_id}", response_model=CreditOffers)
 async def get_preapproved_credit_endpoint(
     cliente_id: int, session: AsyncSession = Depends(get_session)
 ):
     """
-    DEPRECATED: Legacy endpoint that does all steps in one call.
-    Use the split endpoints instead:
-    1. POST /preapproved/{cliente_id}/context
-    2. POST /preapproved/generate
-    3. POST /preapproved/save
-
-    Endpoint to generate pre-approved credit offers for a specific client.
-    Generates new offers based on existing pre-approved credits:
-    - 2 credit offers if the user has 0 pre-approved credits
-    - 1 credit offer if the user has 1 pre-approved credit
-    - Error if the user already has 2+ pre-approved credits
-
-    Stores the generated offers in the database with estado="APROBADO".
-    Returns ALL pre-approved credits for the user (existing + newly generated).
+    Fetches all pre-approved credit offers for a specific client.
+    Returns credits with estado="APROBADO" and oferta=True.
     """
     # Verify user exists
     user = await session.get(Cliente, cliente_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Generate new pre-approved credits (this handles the business logic)
-    credit_offers_dict = await generate_preapproved_credit(cliente_id, session)
-
-    # Convert dict to CreditOffers object only if needed
-    if not isinstance(credit_offers_dict, CreditOffers):
-        credit_offers = CreditOffers(**credit_offers_dict)
-    else:
-        credit_offers = credit_offers_dict
-
-    # Store each generated offer in the database
-    for offer in credit_offers.creditOffers:
-        # First, create or find the Item for this product
-        product = offer.product
-
-        # Try to find existing item with same name and price
-        item_statement = select(Item).where(
-            Item.nombre == product.nombre, Item.precio == product.precio
+    # Fetch pre-approved credits with their associated items
+    statement = (
+        select(Credito, Item)
+        .join(Item, Credito.item_id == Item.id)
+        .where(
+            Credito.cliente_id == cliente_id,
+            Credito.estado == "APROBADO",
+            Credito.oferta,
         )
-        item_result = await session.execute(item_statement)
-        existing_item = item_result.scalar_one_or_none()
+    )
+    result = await session.execute(statement)
+    rows = result.all()
 
-        if existing_item:
-            item_id = existing_item.id
-        else:
-            # Create new item
-            new_item = Item(
-                nombre=product.nombre,
-                precio=product.precio,
-                link=product.link,
-                img_link=product.img_link,
-                categoria=product.categoria,
-            )
-            session.add(new_item)
-            await session.flush()  # Flush to get the ID
-            item_id = new_item.id
+    # Transform database records to CreditOffer objects
+    credit_offers_list = []
+    for row in rows:
+        credito = row[0]  # Credito object
+        item = row[1]  # Item object
 
-        # Create a new Credito record with estado="APROBADO"
-        new_credito = Credito(
-            cliente_id=cliente_id,
-            prestamo=offer.prestamo,
-            interes=offer.interes,
-            meses_originales=offer.meses_originales,
-            deuda_acumulada=0.0,
-            pagado=0.0,
-            categoria=product.categoria,
-            estado="APROBADO",
-            descripcion=offer.descripcion,
-            gasto_inicial_mes=offer.gasto_inicial_mes,
-            gasto_final_mes=offer.gasto_final_mes,
-            item_id=item_id,
-            oferta=True,
+        # Create ProductData from Item
+        product_data = ProductData(
+            nombre=item.nombre,
+            link=item.link or "",
+            img_link=item.img_link or "",
+            precio=item.precio,
+            categoria=item.categoria or "",
         )
-        session.add(new_credito)
 
-    await session.commit()
-    return credit_offers
+        # Create CreditOffer
+        credit_offer = CreditOffer(
+            prestamo=credito.prestamo,
+            interes=credito.interes,
+            meses_originales=credito.meses_originales,
+            descripcion=credito.descripcion or "",
+            gasto_inicial_mes=credito.gasto_inicial_mes or 0.0,
+            gasto_final_mes=credito.gasto_final_mes or 0.0,
+            product=product_data,
+        )
+        credit_offers_list.append(credit_offer)
+
+    return CreditOffers(creditOffers=credit_offers_list)

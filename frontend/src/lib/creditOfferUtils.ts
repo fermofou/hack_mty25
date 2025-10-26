@@ -67,7 +67,6 @@ export async function fetchPreapprovedCredits(
   clientId: number
 ): Promise<CreditOffer[]> {
   try {
-    return [];
     const response = await api.post<PreapprovedCreditsResponse>(
       `/creditos/preapproved/${clientId}`
     );
