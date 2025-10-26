@@ -39,7 +39,7 @@ export default function UserDashboard() {
     fecha: "",
   });
   const [submitting, setSubmitting] = useState(false);
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
 
   const categorias = [
     { value: "Luz", label: "Electricidad" },
@@ -72,11 +72,12 @@ export default function UserDashboard() {
         descripcion: form.descripcion,
         fecha: form.fecha,
       };
-      const { data } = await api.post("/transacciones/registrar", payload);
-  // Update user context (reload user info) -- removed unnecessary loginUser call
-      toast.success("Transacción registrada exitosamente");
-      setIsModalOpen(false);
-      resetForm();
+    const { data } = await api.post("/transacciones/registrar", payload);
+    // Update user context with new cliente info from backend
+    if (data && data.cliente) setUser(data.cliente);
+    toast.success("Transacción registrada exitosamente");
+    setIsModalOpen(false);
+    resetForm();
       // Optionally: trigger TransactionList refresh (could use a context or event)
       // For now, reload page or rely on TransactionList's useEffect on user
     } catch (err: any) {

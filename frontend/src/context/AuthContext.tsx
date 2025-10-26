@@ -22,6 +22,7 @@ export interface Admin {
 interface AuthContextType {
   user?: User | null;
   admin?: Admin | null;
+  setUser: (user: User | null) => void;
   loginUser: (username: string, pwd: string) => Promise<void>;
   loginAdmin: (username: string, pwd: string) => Promise<void>;
   logout: () => void;
