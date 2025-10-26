@@ -208,6 +208,10 @@ async def build_creditos_response(creditos, session):
                     "descripcion": credito.descripcion,
                     "gasto_inicial_mes": credito.gasto_inicial_mes,
                     "gasto_final_mes": credito.gasto_final_mes,
+                    "estado": credito.estado,
+                    "fecha_inicio": credito.fecha_inicio,
+                    "pagado": credito.pagado,
+                    "restante": credito.prestamo - credito.pagado
                 },
                 "cliente": {
                     "nombre": cliente.nombre,

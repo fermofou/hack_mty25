@@ -13,6 +13,7 @@ import {
 import { BatteryCharging, LeafIcon, X } from 'lucide-react';
 import { Button } from '@/components/Button';
 import TransactionList from '@/components/TransactionList';
+import { api } from '@/lib/api';
 
 export default function UserDashboard() {
   const navigate = useNavigate();

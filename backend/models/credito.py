@@ -13,6 +13,7 @@ class CreditoBase(SQLModel):
     descripcion: Optional[str] = None
     gasto_inicial_mes: Optional[float] = None
     gasto_final_mes: Optional[float] = None
+    fecha_inicio: Optional[date] = None
     
     # Foreign Keys
     cliente_id: int = Field(foreign_key="clientes.id")
@@ -48,3 +49,10 @@ class CreditoUpdate(SQLModel):
     gasto_inicial_mes: Optional[float] = None
     gasto_final_mes: Optional[float] = None
     item_id: Optional[int] = None
+    fecha_inicio: Optional[date] = None
+
+class CreditoConNombreCliente(SQLModel):
+    credito: CreditoBase
+    cliente_nombre: str
+    cliente_apellido: str
+    cliente_credit_score: float

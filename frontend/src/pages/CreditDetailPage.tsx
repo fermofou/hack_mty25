@@ -1,11 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import { useParams } from 'react-router';
 import { Link } from 'react-router';
 import { useAuth } from '@/context/AuthContext';
 import { UserTopBar } from '@/components/UserTopBar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/Input';
+import { Button } from '@/components/Button';
 import { mockCredits } from '@/lib/mock-data';
 import {
   Calendar,
@@ -20,6 +23,11 @@ import {
 export default function CreditDetailPage() {
   const params = useParams();
   const { user } = useAuth();
+  const [paymentType, setPaymentType] = useState<'monthly' | 'custom'>(
+    'monthly'
+  );
+  const [customAmount, setCustomAmount] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   if (!user) {
     return null;
@@ -34,6 +42,21 @@ export default function CreditDetailPage() {
       </div>
     );
   }
+
+  const handlePayment = async () => {
+    setIsProcessing(true);
+    // Simulate payment processing
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    setIsProcessing(false);
+    // Here you would integrate with actual payment API
+    alert(
+      `Pago procesado: $${
+        paymentType === 'monthly'
+          ? credit.monthlyPayment.toLocaleString('es-MX')
+          : Number(customAmount).toLocaleString('es-MX')
+      }`
+    );
+  };
 
   return (
     <div className='min-h-screen bg-background'>
@@ -225,6 +248,121 @@ export default function CreditDetailPage() {
 
           {/* Sidebar stats */}
           <div className='space-y-6'>
+            {/* Payment Card - Only for approved credits */}
+            {credit.status === 'approved' && (
+              <Card className='border border-gray-200 shadow-sm'>
+                <CardHeader>
+                  <CardTitle className='text-base'>Realizar pago</CardTitle>
+                </CardHeader>
+                <CardContent className='space-y-4'>
+                  {/* Due amount and date info */}
+                  <div className='bg-gray-50 rounded-lg p-3 border border-gray-100'>
+                    <div className='flex justify-between items-center mb-2'>
+                      <span className='text-sm text-gray-600'>
+                        Próximo pago:
+                      </span>
+                      <span className='text-lg font-bold text-[#EB0029]'>
+                        ${credit.monthlyPayment.toLocaleString('es-MX')}
+                      </span>
+                    </div>
+                    <div className='flex justify-between items-center'>
+                      <span className='text-sm text-gray-600'>
+                        Fecha límite:
+                      </span>
+                      <span className='text-sm font-medium text-gray-800'>
+                        {(() => {
+                          const nextDue = new Date();
+                          nextDue.setDate(15); // Set to 15th of current month
+                          if (nextDue < new Date()) {
+                            nextDue.setMonth(nextDue.getMonth() + 1);
+                          }
+                          return nextDue.toLocaleDateString('es-MX', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                          });
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Payment type selection */}
+                  <div className='space-y-3'>
+                    <p className='text-sm font-medium text-gray-700'>
+                      Tipo de pago
+                    </p>
+                    <div className='space-y-2'>
+                      <label className='flex items-center space-x-2 cursor-pointer'>
+                        <input
+                          type='radio'
+                          name='paymentType'
+                          value='monthly'
+                          checked={paymentType === 'monthly'}
+                          onChange={(e) =>
+                            setPaymentType(
+                              e.target.value as 'monthly' | 'custom'
+                            )
+                          }
+                          className='text-[#EB0029] focus:ring-[#EB0029]'
+                        />
+                        <span className='text-sm'>
+                          Pago mensual regular ($
+                          {credit.monthlyPayment.toLocaleString('es-MX')})
+                        </span>
+                      </label>
+                      <label className='flex items-center space-x-2 cursor-pointer'>
+                        <input
+                          type='radio'
+                          name='paymentType'
+                          value='custom'
+                          checked={paymentType === 'custom'}
+                          onChange={(e) =>
+                            setPaymentType(
+                              e.target.value as 'monthly' | 'custom'
+                            )
+                          }
+                          className='text-[#EB0029] focus:ring-[#EB0029]'
+                        />
+                        <span className='text-sm'>Monto personalizado</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Custom amount input */}
+                  {paymentType === 'custom' && (
+                    <div className='space-y-2'>
+                      <Input
+                        type='number'
+                        placeholder='Ingresa el monto'
+                        value={customAmount}
+                        label='Monto a pagar'
+                        onChange={(e) => setCustomAmount(e.target.value)}
+                        min='1'
+                        max={credit.remainingBalance.toString()}
+                      />
+                      <p className='text-xs text-gray-500'>
+                        Máximo: $
+                        {credit.remainingBalance.toLocaleString('es-MX')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Payment button */}
+                  <Button
+                    onClick={handlePayment}
+                    disabled={
+                      isProcessing ||
+                      (paymentType === 'custom' &&
+                        (!customAmount || Number(customAmount) <= 0))
+                    }
+                    className='w-full bg-[#EB0029] hover:bg-[#C5001F] text-white'
+                  >
+                    {isProcessing ? 'Procesando...' : 'Realizar pago'}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
             <Card className='border border-gray-200 shadow-sm'>
               <CardHeader>
                 <CardTitle className='text-base'>
