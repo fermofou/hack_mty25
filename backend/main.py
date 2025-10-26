@@ -30,3 +30,11 @@ app.include_router(credito_router)
 app.include_router(transaccion_router)
 app.include_router(productos_router)
 app.include_router(gemini_router)
+
+@app.get("/")
+async def root():
+    return {"message": "API de Créditos Verdes", "status": "running", "docs": "/docs"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
