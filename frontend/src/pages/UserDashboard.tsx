@@ -218,6 +218,19 @@ export default function UserDashboard() {
           </CardContent>
         </Card>
 
+        {/* Transactions section with button */}
+        <div className="flex items-center justify-between mt-12 mb-2">
+          <h2 className="text-xl font-semibold">Transacciones recientes</h2>
+          <Button
+            variant="primary"
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-[#EB0029] hover:bg-[#c90022] text-white ml-4"
+            style={{ minWidth: 'fit-content' }}
+            onClick={() => {}}
+          >
+            Registrar transacción
+          </Button>
+        </div>
+        {/* Only the filter buttons and transaction list below, no extra heading */}
         <TransactionList />
       </main>
     </div>

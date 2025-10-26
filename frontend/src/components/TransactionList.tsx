@@ -52,10 +52,6 @@ function TransactionList() {
 
   return (
     <div className='mb-8'>
-      <div className='flex items-center justify-between mb-4'>
-        <h2 className='text-xl font-semibold'>Transacciones recientes</h2>
-      </div>
-
       {/* Category filters */}
       <div className='flex flex-wrap gap-2 mb-4'>
         {categories.map((cat) => (
