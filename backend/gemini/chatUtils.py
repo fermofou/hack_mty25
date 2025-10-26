@@ -258,6 +258,7 @@ def create_credit_offers(
        - Mention concrete savings and payback period if applicable
        - Include relevant product specifications or capacity
        - ONLY 1 SENTENCE. DO NOT MAKE IT LONG.
+       - MAKE SURE ITS IN SPANISH. ALL TEXT.
     
     5. PROJECTED SAVINGS:
        - Calculate accurate savings based on product specifications:
