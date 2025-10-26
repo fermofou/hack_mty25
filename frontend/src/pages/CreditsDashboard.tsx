@@ -158,14 +158,18 @@ export default function CreditsPage() {
                           offer={transformCreditOffer(credit)}
                           showDetailsInModal={true}
                           onApply={() => {
-                            const productLink = credit.product?.link;
-                            if (productLink) {
-                              window.open(productLink, '_blank');
-                            }
+                            navigate(`/user/credits/details/${credit.id_cred}`);
                           }}
-                          onDismiss={() =>
-                            console.log(`Dismissed offer ${index + 1}`)
-                          }
+                          onDismiss={async () => {
+                            setPreapprovedCredits(
+                              preapprovedCredits.filter(
+                                (cred) => cred.id_cred !== credit.id_cred
+                              )
+                            );
+                            await api.patch(
+                              `clientes/${user.id}/creditos/${credit.id_cred}/negar`
+                            );
+                          }}
                           className='w-full'
                         />
                       ))}
