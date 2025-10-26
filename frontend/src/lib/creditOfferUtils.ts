@@ -22,6 +22,26 @@ export interface PreapprovedCreditsResponse {
   creditOffers: CreditOffer[];
 }
 
+export interface PreapprovedContextResponse {
+  conversation_context: string;
+  num_offers_to_generate: number;
+}
+
+export interface GenerateCreditOffersRequest {
+  conversation_context: string;
+  num_offers_to_generate: number;
+}
+
+export interface SaveCreditOffersRequest {
+  cliente_id: number;
+  credit_offers: PreapprovedCreditsResponse;
+}
+
+export interface SaveCreditOffersResponse {
+  message: string;
+  created_credit_ids: number[];
+}
+
 export interface TransformedCreditOffer {
   title: string;
   subtitle: string;
@@ -55,6 +75,101 @@ export async function fetchPreapprovedCredits(
   } catch (error) {
     console.error("Error fetching preapproved credits:", error);
     return [];
+  }
+}
+
+/**
+ * Step 1: Gets the context needed for generating preapproved credits
+ */
+export async function getPreapprovedContext(
+  clientId: number
+): Promise<PreapprovedContextResponse | null> {
+  try {
+    const response = await api.post<PreapprovedContextResponse>(
+      `/creditos/preapproved/${clientId}/context`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error getting preapproved context:", error);
+    return null;
+  }
+}
+
+/**
+ * Step 2: Generates credit offers using AI
+ */
+export async function generateCreditOffers(
+  request: GenerateCreditOffersRequest
+): Promise<PreapprovedCreditsResponse | null> {
+  try {
+    const response = await api.post<PreapprovedCreditsResponse>(
+      `/creditos/preapproved/generate`,
+      request
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error generating credit offers:", error);
+    return null;
+  }
+}
+
+/**
+ * Step 3: Saves the generated credit offers to the database
+ */
+export async function savePreapprovedCredits(
+  request: SaveCreditOffersRequest
+): Promise<SaveCreditOffersResponse | null> {
+  try {
+    const response = await api.post<SaveCreditOffersResponse>(
+      `/creditos/preapproved/save`,
+      request
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error saving preapproved credits:", error);
+    return null;
+  }
+}
+
+/**
+ * Complete flow: Creates preapproved credits for a given client
+ * This orchestrates all three steps: context -> generate -> save
+ */
+export async function createPreapprovedCredits(
+  clientId: number
+): Promise<SaveCreditOffersResponse | null> {
+  try {
+    // Step 1: Get context
+    const context = await getPreapprovedContext(clientId);
+    if (context?.num_offers_to_generate === 0) {
+      return null;
+    }
+    if (!context) {
+      throw new Error("Failed to get preapproved context");
+    }
+
+    // Step 2: Generate credit offers using AI
+    const creditOffers = await generateCreditOffers({
+      conversation_context: context.conversation_context,
+      num_offers_to_generate: context.num_offers_to_generate,
+    });
+    if (!creditOffers) {
+      throw new Error("Failed to generate credit offers");
+    }
+
+    // Step 3: Save to database
+    const saveResult = await savePreapprovedCredits({
+      cliente_id: clientId,
+      credit_offers: creditOffers,
+    });
+    if (!saveResult) {
+      throw new Error("Failed to save credit offers");
+    }
+
+    return saveResult;
+  } catch (error) {
+    console.error("Error creating preapproved credits:", error);
+    return null;
   }
 }
 

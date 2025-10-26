@@ -2,6 +2,7 @@ from typing import List, Optional
 from datetime import date
 from sqlmodel import SQLModel, Field, Relationship
 
+
 class CreditoBase(SQLModel):
     prestamo: float
     interes: float = Field(ge=0)
@@ -14,28 +15,33 @@ class CreditoBase(SQLModel):
     gasto_inicial_mes: Optional[float] = None
     gasto_final_mes: Optional[float] = None
     fecha_inicio: Optional[date] = None
-    
+    oferta: Optional[bool] = Field(default=False)
+
     # Foreign Keys
     cliente_id: int = Field(foreign_key="clientes.id")
     item_id: Optional[int] = Field(default=None, foreign_key="items.id")
 
+
 class Credito(CreditoBase, table=True):
     __tablename__ = "creditos"
-    
+
     # Tu schema usa id_cred, así que lo respetamos
     id_cred: Optional[int] = Field(default=None, primary_key=True)
     fecha_inicio: Optional[date] = Field(default_factory=date.today)
-    
+
     # Relaciones: Un crédito pertenece a UN cliente y a UN item
     cliente: "Cliente" = Relationship(back_populates="creditos")
     item: Optional["Item"] = Relationship(back_populates="creditos")
 
+
 class CreditoCreate(CreditoBase):
-    pass # Hereda todos los campos necesarios de CreditoBase
+    pass  # Hereda todos los campos necesarios de CreditoBase
+
 
 class CreditoRead(CreditoBase):
     id_cred: int
     fecha_inicio: Optional[date] = None
+
 
 class CreditoUpdate(SQLModel):
     prestamo: Optional[float] = None
@@ -50,6 +56,7 @@ class CreditoUpdate(SQLModel):
     gasto_final_mes: Optional[float] = None
     item_id: Optional[int] = None
     fecha_inicio: Optional[date] = None
+
 
 class CreditoConNombreCliente(SQLModel):
     credito: CreditoRead
