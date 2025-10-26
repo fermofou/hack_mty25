@@ -74,10 +74,10 @@ export const Modal: React.FC<ModalProps> = ({
   if (!shouldRender) return null;
 
   const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
+    sm: 'max-w-xs',
+    md: 'max-w-sm',
+    lg: 'max-w-md',
+    xl: 'max-w-lg',
   };
 
   return (
@@ -97,8 +97,8 @@ export const Modal: React.FC<ModalProps> = ({
       {/* Modal content with scale and fade animation */}
       <div
         className={`
-        relative bg-white rounded-lg shadow-xl mx-4 my-8 
-        ${sizeClasses[size]} w-full max-h-[90vh] overflow-hidden
+  relative bg-white rounded-3xl shadow-xl mx-4 my-8
+  max-w-[540px] w-full max-h-[90vh] overflow-hidden
         transform transition-all duration-300 ease-out
         ${
           isAnimating

@@ -8,6 +8,7 @@ export interface InputProps
   helperText?: string;
   maxLength?: number;
   showCounter?: boolean;
+  alwaysFloatLabel?: boolean;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
@@ -21,6 +22,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       maxLength,
       showCounter,
       value,
+      alwaysFloatLabel,
       ...props
     },
     ref
@@ -97,7 +99,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       }
     };
 
-    const shouldFloatLabel = hasContent || isFocused;
+    const shouldFloatLabel = hasContent || isFocused || alwaysFloatLabel;
 
     return (
       <div className='w-full relative group'>
