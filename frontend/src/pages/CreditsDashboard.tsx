@@ -411,11 +411,7 @@ export default function CreditsPage() {
                         ).toLocaleString("es-MX")}
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        $
-                        {(
-                          monthlyStats?.current_monthly_savings?.money ?? 0 * 12
-                        ).toLocaleString("es-MX")}{" "}
-                        al año
+                        Por mes
                       </p>
                     </CardContent>
                   </Card>
@@ -434,7 +430,7 @@ export default function CreditsPage() {
                         ton
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Por año
+                        Por mes
                       </p>
                     </CardContent>
                   </Card>
