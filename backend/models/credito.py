@@ -52,7 +52,7 @@ class CreditoUpdate(SQLModel):
     fecha_inicio: Optional[date] = None
 
 class CreditoConNombreCliente(SQLModel):
-    credito: CreditoBase
+    credito: CreditoRead
     cliente_nombre: str
     cliente_apellido: str
     cliente_credit_score: float

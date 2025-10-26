@@ -78,7 +78,7 @@ export function calcularAhorrosPorCredito(creditos: Credito[]): AhorroTotal[] {
 
 // Calculate percentage of clients on track with payments
 export function calcularPorcentajeAlDia(creditos: Credito[]): number {
-  const creditosActivos = creditos.filter((c) => c.estado === "ACEPTADO");
+  const creditosActivos = creditos.filter((c) => c.estado === "APROBADO");
   if (creditosActivos.length === 0) return 100;
 
   const clientesAlDia = creditosActivos.filter(

@@ -19,7 +19,6 @@ import {
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
-import { AlertCircle, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import type { Credito, ClienteAlerta, AhorroTotal } from "@/lib/types";
@@ -41,13 +40,6 @@ export default function UserDashboard() {
     []
   );
   const [ahorrosPorCredito, setAhorrosPorCredito] = useState<AhorroTotal[]>([]);
-  const mockAdminStats = {
-    totalCapital: 500000,
-    activeCredits: 25,
-    totalDisbursed: 300000,
-    interestEarned: 45000,
-    pendingCredits: 3,
-  };
 
   useEffect(() => {
     // Fetch creditos from API
@@ -79,9 +71,7 @@ export default function UserDashboard() {
   }
 
   // Calculate statistics
-  const creditosVerdes = creditos.filter(
-    (c) => c.categoria === "Luz" && c.estado === "ACEPTADO"
-  ).length;
+  const creditosVerdes = creditos.filter((c) => c.estado === "ACEPTADO").length;
   const pendientesAprobar = creditos.filter(
     (c) => c.estado === "PENDIENTE"
   ).length;

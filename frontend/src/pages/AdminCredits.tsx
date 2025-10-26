@@ -23,14 +23,13 @@ import {
   Clock,
   User,
   Download,
-  Sparkles,
   Loader2,
   FileX,
   PackageCheck,
   PackageSearch,
 } from "lucide-react";
 import { api } from "@/lib/api";
-import type { CreditoConNombreCliente, Credito } from "@/lib/types"; // Asumo que tus tipos están aquí
+import type { CreditoConNombreCliente } from "@/lib/types"; // Asumo que tus tipos están aquí
 
 // --- Mock de Componentes (Solo para que el archivo sea autónomo) ---
 // (Asumimos que tienes este componente en otra parte)
@@ -55,7 +54,7 @@ import type { CreditoConNombreCliente, Credito } from "@/lib/types"; // Asumo qu
 // )
 // --- Fin de Mocks ---
 
-type CreditStatus = "PENDIENTE" | "ACEPTADO" | "RECHAZADO";
+type CreditStatus = "PENDIENTE" | "APROBADO" | "NEGADO" | "ACEPTADO";
 
 // Function to convert SVG to base64 for embedding
 const getSvgAsBase64 = async (svgPath: string): Promise<string> => {
@@ -103,6 +102,8 @@ export default function AdminCredits() {
       .get("/creditos/todos")
       .then((res) => {
         const data_creditos: CreditoConNombreCliente[] = res.data;
+        console.log("Loaded credits data:", data_creditos); // Debug log
+        console.log("First credit structure:", data_creditos[0]); // Debug log
         // Ya no necesitamos ordenar aquí porque el backend ordena por fecha_inicio
         setAllCredits(data_creditos);
         setLoading(false);
@@ -132,14 +133,25 @@ export default function AdminCredits() {
     newStatus: CreditStatus
   ) => {
     try {
+      console.log("Updating credit:", creditId, "to status:", newStatus); // Debug log
+      console.log("Type of creditId:", typeof creditId); // Debug log
+
+      if (!creditId || creditId === undefined) {
+        throw new Error("Credit ID is undefined or null");
+      }
+
+      // Solo envía el campo que se va a actualizar
       const response = await api.patch(`/creditos/${creditId}`, {
         estado: newStatus,
       });
+
       if (response.status !== 200) {
         throw new Error(
           `Falló al actualizar el crédito (status: ${response.status})`
         );
       }
+
+      console.log("Credit updated successfully"); // Debug log
 
       // Actualiza el estado local SÓLO después de que la API tenga éxito
       setAllCredits((prev) =>
@@ -154,11 +166,30 @@ export default function AdminCredits() {
     }
     setSelectedCredit(null);
   };
-
-  const handleApprove = (creditId: number) =>
-    updateCreditStatus(creditId, "ACEPTADO");
-  const handleReject = (creditId: number) =>
-    updateCreditStatus(creditId, "RECHAZADO");
+  const handleApprove = (creditId: number) => {
+    console.log(
+      "handleApprove called with creditId:",
+      creditId,
+      typeof creditId
+    );
+    return updateCreditStatus(creditId, "APROBADO");
+  };
+  const handleReject = (creditId: number) => {
+    console.log(
+      "handleReject called with creditId:",
+      creditId,
+      typeof creditId
+    );
+    return updateCreditStatus(creditId, "NEGADO");
+  };
+  const handleAccept = (creditId: number) => {
+    console.log(
+      "handleAccept called with creditId:",
+      creditId,
+      typeof creditId
+    );
+    return updateCreditStatus(creditId, "ACEPTADO");
+  };
 
   // --- Render ---
 
@@ -190,7 +221,7 @@ export default function AdminCredits() {
             Gestionar Créditos
           </h1>
           <p className="text-muted-foreground">
-            Revisa, aprueba o rechaza las solicitudes de crédito.
+            Revisa, aprueba o niega las solicitudes de crédito.
           </p>
         </div>
 
@@ -202,7 +233,7 @@ export default function AdminCredits() {
           }
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-3 md:w-[400px]">
+          <TabsList className="grid w-full grid-cols-4 md:w-[600px]">
             <TabsTrigger value="PENDIENTE">
               <PackageSearch className="mr-2 h-4 w-4" />
               Pendientes (
@@ -212,25 +243,33 @@ export default function AdminCredits() {
               }
               )
             </TabsTrigger>
-            <TabsTrigger value="ACEPTADO">
+            <TabsTrigger value="APROBADO">
               <PackageCheck className="mr-2 h-4 w-4" />
-              Aprobados (
+              Ofertas (
+              {allCredits.filter((c) => c.credito.estado === "APROBADO").length}
+              )
+            </TabsTrigger>
+            <TabsTrigger value="ACEPTADO">
+              <Check className="mr-2 h-4 w-4" />
+              Activos (
               {allCredits.filter((c) => c.credito.estado === "ACEPTADO").length}
               )
             </TabsTrigger>
-            <TabsTrigger value="RECHAZADO">
+            <TabsTrigger value="NEGADO">
               <FileX className="mr-2 h-4 w-4" />
-              Rechazados (
-              {
-                allCredits.filter((c) => c.credito.estado === "RECHAZADO")
-                  .length
-              }
-              )
+              Negados (
+              {allCredits.filter((c) => c.credito.estado === "NEGADO").length})
             </TabsTrigger>
           </TabsList>
 
           {/* Contenido de cada Tab */}
           <TabsContent value="PENDIENTE" className="mt-6">
+            <CreditList
+              credits={filteredCredits}
+              onCreditClick={setSelectedCredit}
+            />
+          </TabsContent>
+          <TabsContent value="APROBADO" className="mt-6">
             <CreditList
               credits={filteredCredits}
               onCreditClick={setSelectedCredit}
@@ -242,7 +281,7 @@ export default function AdminCredits() {
               onCreditClick={setSelectedCredit}
             />
           </TabsContent>
-          <TabsContent value="RECHAZADO" className="mt-6">
+          <TabsContent value="NEGADO" className="mt-6">
             <CreditList
               credits={filteredCredits}
               onCreditClick={setSelectedCredit}
@@ -259,6 +298,7 @@ export default function AdminCredits() {
         onClose={() => setSelectedCredit(null)}
         onApprove={handleApprove}
         onReject={handleReject}
+        onAccept={handleAccept}
         onShowContract={() => setShowContract(true)}
       />
 
@@ -325,9 +365,11 @@ function CreditCard({ credit, onClick }: CreditCardProps) {
     switch (estado) {
       case "PENDIENTE":
         return "bg-[#FFA400] text-white hover:bg-[#FFA400]";
+      case "APROBADO":
+        return "bg-[#2563EB] text-white hover:bg-[#2563EB]"; // Azul para ofertas
       case "ACEPTADO":
-        return "bg-[#6CC04A] text-white hover:bg-[#6CC04A]";
-      case "RECHAZADO":
+        return "bg-[#6CC04A] text-white hover:bg-[#6CC04A]"; // Verde para activos
+      case "NEGADO":
         return "bg-[#EB0029] text-white hover:bg-[#EB0029]";
     }
   };
@@ -408,6 +450,7 @@ interface CreditModalProps {
   onClose: () => void;
   onApprove: (id: number) => void;
   onReject: (id: number) => void;
+  onAccept: (id: number) => void;
   onShowContract: () => void;
 }
 
@@ -416,12 +459,22 @@ function CreditModal({
   onClose,
   onApprove,
   onReject,
+  onAccept,
   onShowContract,
 }: CreditModalProps) {
   if (!credit) return null;
 
   const { credito, cliente_nombre, cliente_apellido, cliente_credit_score } =
     credit;
+
+  // Debug log para verificar el id_cred
+  console.log("CreditModal - credito object:", credito);
+  console.log(
+    "CreditModal - credito.id_cred:",
+    credito.id_cred,
+    typeof credito.id_cred
+  );
+
   const monthlyPayment = calculateMonthlyPayment(
     credito.prestamo,
     credito.interes,
@@ -548,8 +601,8 @@ function CreditModal({
 
           {/* --- Botones de Acción --- */}
           <div className="pt-4 border-t flex flex-col gap-3">
-            {/* Solo muestra "Visualizar Contrato" si NO está RECHAZADO */}
-            {credito.estado !== "RECHAZADO" && (
+            {/* Solo muestra "Visualizar Contrato" si NO está NEGADO */}
+            {credito.estado !== "NEGADO" && (
               <BanorteButton
                 variant="secondary"
                 className="w-full border-[#EB0029] text-[#EB0029] hover:bg-[#EB0029] hover:text-white"
@@ -560,13 +613,13 @@ function CreditModal({
               </BanorteButton>
             )}
 
-            {/* Solo muestra "Aprobar/Rechazar" si está PENDIENTE */}
+            {/* Botones para créditos PENDIENTES, si estam pendientes, si se aprueban se aceptan */}
             {credito.estado === "PENDIENTE" && (
               <div className="flex gap-3">
                 <BanorteButton
                   variant="primary"
                   className="flex-1 bg-[#6CC04A] hover:bg-[#5CB03A] text-white"
-                  onClick={() => onApprove(credito.id_cred)}
+                  onClick={() => onAccept(credito.id_cred)}
                 >
                   <Check className="mr-2 h-4 w-4" />
                   Aprobar
@@ -577,8 +630,28 @@ function CreditModal({
                   onClick={() => onReject(credito.id_cred)}
                 >
                   <X className="mr-2 h-4 w-4" />
-                  Rechazar
+                  Negar
                 </BanorteButton>
+              </div>
+            )}
+
+            {/* no debe haber botón para créditos APROBADOS (ofertas) */}
+            {credito.estado === "APROBADO" && (
+              <BanorteButton
+                variant="secondary"
+                className="flex-1 border-destructive text-destructive hover:bg-destructive hover:text-white"
+                onClick={() => onReject(credito.id_cred)}
+              >
+                <Check className="mr-2 h-4 w-4" />
+                Cancelar Crédito
+              </BanorteButton>
+            )}
+
+            {/* Info para créditos ACEPTADOS (activos) */}
+            {credito.estado === "ACEPTADO" && (
+              <div className="text-center text-sm text-muted-foreground">
+                <Check className="mx-auto h-8 w-8 text-[#6CC04A] mb-2" />
+                Crédito activo y en uso
               </div>
             )}
           </div>
@@ -747,12 +820,12 @@ const generateContractHTML = (
     credito.meses_originales
   );
 
-  // Determinar si mostrar nombres en negritas (solo para créditos aprobados)
-  const isApproved = credito.estado === "ACEPTADO";
-  const clienteNameStyle = isApproved
+  // Determinar si mostrar nombres en negritas (solo para créditos activos)
+  const isActive = credito.estado === "ACEPTADO";
+  const clienteNameStyle = isActive
     ? "font-weight: bold; color: #000;"
     : "color: #666;";
-  const adminNameStyle = isApproved
+  const adminNameStyle = isActive
     ? "font-weight: bold; color: #000;"
     : "color: #666;";
 
@@ -820,8 +893,8 @@ const generateContractHTML = (
           <div class="logo-text">BANORTE</div>
         </div>
         <div class="title">CONTRATO DE CRÉDITO VERDE${
-          isApproved
-            ? ' - <span style="color: #6CC04A; font-weight: bold;">APROBADO</span>'
+          isActive
+            ? ' - <span style="color: #6CC04A; font-weight: bold;">ACTIVO</span>'
             : ""
         }</div>
       </div>
@@ -919,7 +992,7 @@ const generateContractHTML = (
       <div class="signature-section">
         <div class="signature-box">
           ${
-            isApproved
+            isActive
               ? `<div style="font-size: 14px; ${clienteNameStyle} margin-bottom: 10px;">${clienteNombreCompleto}</div>`
               : ""
           }
@@ -929,7 +1002,7 @@ const generateContractHTML = (
         </div>
         <div class="signature-box">
           ${
-            isApproved
+            isActive
               ? `<div style="font-size: 14px; ${adminNameStyle} margin-bottom: 10px;">${adminName}</div>`
               : ""
           }

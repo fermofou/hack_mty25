@@ -6,7 +6,7 @@ export interface Credito {
   deuda_acumulada: number;
   pagado: number;
   categoria: string;
-  estado: "ACEPTADO" | "PENDIENTE" | "RECHAZADO";
+  estado: "APROBADO" | "PENDIENTE" | "NEGADO" | "ACEPTADO";
   descripcion: string;
   gasto_inicial_mes: number;
   gasto_final_mes: number;

@@ -79,9 +79,7 @@ export default function UserDashboard() {
   }
 
   // Calculate statistics
-  const creditosVerdes = creditos.filter(
-    (c) => c.categoria === "Luz" && c.estado === "ACEPTADO"
-  ).length;
+  const creditosVerdes = creditos.filter((c) => c.estado === "ACEPTADO").length;
   const pendientesAprobar = creditos.filter(
     (c) => c.estado === "PENDIENTE"
   ).length;
