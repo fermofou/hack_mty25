@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
-import { useAuth } from "../hooks/useAuth";
-import { AdminTopBar } from "../components/AdminTopBar";
+import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router"; // Asumo que usas react-router, no next/navigation
+import { useAuth } from "../hooks/useAuth"; // Ajusta la ruta si es necesario
+import { AdminTopBar } from "../components/AdminTopBar"; // Ajusta la ruta si es necesario
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BanorteButton } from "@/components/ui/BanorteButton";
@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Importa Tabs
 import {
   Check,
   X,
@@ -22,14 +23,45 @@ import {
   Clock,
   User,
   Download,
+  Sparkles,
+  Loader2,
+  FileX,
+  PackageCheck,
+  PackageSearch,
 } from "lucide-react";
 import { api } from "@/lib/api";
-import type { Credito } from "@/lib/types";
+import type { CreditoConNombreCliente, Credito } from "@/lib/types"; // Asumo que tus tipos están aquí
+
+// --- Mock de Componentes (Solo para que el archivo sea autónomo) ---
+// (Asumimos que tienes este componente en otra parte)
+// const AdminTopBar = () => (
+//   <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+//     <div className="container flex h-14 items-center">
+//       <div className="mr-4 hidden md:flex">
+//         <a className="mr-6 flex items-center space-x-2" href="/admin/dashboard">
+//           <Sparkles className="h-6 w-6 text-[#6CC04A]" />
+//           <span className="hidden font-bold sm:inline-block">Banerde Admin</span>
+//         </a>
+//       </div>
+//     </div>
+//   </header>
+// )
+
+// (Asumimos que tienes este componente en otra parte)
+// const BanorteButton = ({ variant, className, children, ...props }: any) => (
+//   <button className={`px-4 py-2 rounded-md font-semibold ${className}`} {...props}>
+//     {children}
+//   </button>
+// )
+// --- Fin de Mocks ---
+
+type CreditStatus = "PENDIENTE" | "ACEPTADO" | "RECHAZADO";
 
 // Function to convert SVG to base64 for embedding
 const getSvgAsBase64 = async (svgPath: string): Promise<string> => {
   try {
     const response = await fetch(svgPath);
+    if (!response.ok) throw new Error("Network response was not ok");
     const svgText = await response.text();
     return `data:image/svg+xml;base64,${btoa(svgText)}`;
   } catch (error) {
@@ -38,17 +70,22 @@ const getSvgAsBase64 = async (svgPath: string): Promise<string> => {
   }
 };
 
+// ====================================================================
+// 1. Componente Principal
+// ====================================================================
 export default function AdminCredits() {
   const navigate = useNavigate();
   const { admin } = useAuth();
-  const [creditos, setCreditos] = useState<Credito[]>([]);
+  const [allCredits, setAllCredits] = useState<CreditoConNombreCliente[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCredit, setSelectedCredit] = useState<Credito | null>(null);
+  const [selectedCredit, setSelectedCredit] =
+    useState<CreditoConNombreCliente | null>(null);
   const [showContract, setShowContract] = useState(false);
   const [banorteLogo, setBanorteLogo] = useState<string>("");
+  const [currentTab, setCurrentTab] = useState<CreditStatus>("PENDIENTE");
 
+  // Carga el logo de Banorte
   useEffect(() => {
-    // Load Banorte logo when component mounts
     const loadLogo = async () => {
       try {
         const logoBase64 = await getSvgAsBase64("/images/banorte.svg");
@@ -60,19 +97,14 @@ export default function AdminCredits() {
     loadLogo();
   }, []);
 
+  // Carga TODOS los créditos
   useEffect(() => {
-    // Fetch creditos from API
     api
-      .get("/creditos")
+      .get("/creditos/todos")
       .then((res) => {
-        const data_creditos: Credito[] = res.data;
-        console.log("Creditos fetched:", data_creditos);
-        const sorted = data_creditos.sort(
-          (a: Credito, b: Credito) =>
-            new Date(b.fecha_inicio).getTime() -
-            new Date(a.fecha_inicio).getTime()
-        );
-        setCreditos(sorted);
+        const data_creditos: CreditoConNombreCliente[] = res.data;
+        // Ya no necesitamos ordenar aquí porque el backend ordena por fecha_inicio
+        setAllCredits(data_creditos);
         setLoading(false);
       })
       .catch((error) => {
@@ -81,57 +113,512 @@ export default function AdminCredits() {
       });
   }, []);
 
+  // Redirige si no es admin
   useEffect(() => {
     if (admin === null) {
       navigate("/admin");
     }
   }, [admin, navigate]);
 
+  // Memoiza los créditos filtrados para evitar re-cálculos
+  const filteredCredits = useMemo(() => {
+    return allCredits.filter((c) => c.credito.estado === currentTab);
+  }, [allCredits, currentTab]);
+
+  // --- Handlers de API ---
+
+  const updateCreditStatus = async (
+    creditId: number,
+    newStatus: CreditStatus
+  ) => {
+    try {
+      const response = await api.patch(`/creditos/${creditId}`, {
+        estado: newStatus,
+      });
+      if (response.status !== 200) {
+        throw new Error(
+          `Falló al actualizar el crédito (status: ${response.status})`
+        );
+      }
+
+      // Actualiza el estado local SÓLO después de que la API tenga éxito
+      setAllCredits((prev) =>
+        prev.map((c) =>
+          c.credito.id_cred === creditId
+            ? { ...c, credito: { ...c.credito, estado: newStatus } }
+            : c
+        )
+      );
+    } catch (error) {
+      console.error(`Error updating credit to ${newStatus}:`, error);
+    }
+    setSelectedCredit(null);
+  };
+
+  const handleApprove = (creditId: number) =>
+    updateCreditStatus(creditId, "ACEPTADO");
+  const handleReject = (creditId: number) =>
+    updateCreditStatus(creditId, "RECHAZADO");
+
+  // --- Render ---
+
   if (!admin) {
-    return null;
+    return null; // Muestra un loader o nada mientras redirige
   }
 
-  // Calculate pending credits
-  const pendingCredits = creditos.filter((c) => c.estado === "PENDIENTE");
-
-  const handleApprove = async (creditId: number) => {
-    // TODO: Add API call to approve credit
-    setCreditos((prev) =>
-      prev.map((c) =>
-        c.id_cred === creditId ? { ...c, estado: "ACEPTADO" as const } : c
-      )
-    );
-    setSelectedCredit(null);
-  };
-
-  const handleReject = async (creditId: number) => {
-    // TODO: Add API call to reject credit
-    setCreditos((prev) =>
-      prev.map((c) =>
-        c.id_cred === creditId ? { ...c, estado: "RECHAZADO" as const } : c
-      )
-    );
-    setSelectedCredit(null);
-  };
-
-  const calculateMonthlyPayment = (
-    principal: number,
-    annualRate: number,
-    months: number
-  ) => {
-    const monthlyRate = annualRate / 100 / 12;
+  if (loading) {
     return (
-      (principal * monthlyRate * Math.pow(1 + monthlyRate, months)) /
-      (Math.pow(1 + monthlyRate, months) - 1)
+      <div className="min-h-screen bg-background">
+        <AdminTopBar />
+        <main className="container mx-auto px-4 py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto mt-12" />
+          <p className="text-center text-muted-foreground mt-4">
+            Cargando solicitudes...
+          </p>
+        </main>
+      </div>
     );
+  }
+
+  return (
+    <div className="min-h-screen bg-muted/40">
+      <AdminTopBar />
+
+      <main className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground">
+            Gestionar Créditos
+          </h1>
+          <p className="text-muted-foreground">
+            Revisa, aprueba o rechaza las solicitudes de crédito.
+          </p>
+        </div>
+
+        {/* --- TABS --- */}
+        <Tabs
+          value={currentTab}
+          onValueChange={(value: string) =>
+            setCurrentTab(value as CreditStatus)
+          }
+          className="w-full"
+        >
+          <TabsList className="grid w-full grid-cols-3 md:w-[400px]">
+            <TabsTrigger value="PENDIENTE">
+              <PackageSearch className="mr-2 h-4 w-4" />
+              Pendientes (
+              {
+                allCredits.filter((c) => c.credito.estado === "PENDIENTE")
+                  .length
+              }
+              )
+            </TabsTrigger>
+            <TabsTrigger value="ACEPTADO">
+              <PackageCheck className="mr-2 h-4 w-4" />
+              Aprobados (
+              {allCredits.filter((c) => c.credito.estado === "ACEPTADO").length}
+              )
+            </TabsTrigger>
+            <TabsTrigger value="RECHAZADO">
+              <FileX className="mr-2 h-4 w-4" />
+              Rechazados (
+              {
+                allCredits.filter((c) => c.credito.estado === "RECHAZADO")
+                  .length
+              }
+              )
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Contenido de cada Tab */}
+          <TabsContent value="PENDIENTE" className="mt-6">
+            <CreditList
+              credits={filteredCredits}
+              onCreditClick={setSelectedCredit}
+            />
+          </TabsContent>
+          <TabsContent value="ACEPTADO" className="mt-6">
+            <CreditList
+              credits={filteredCredits}
+              onCreditClick={setSelectedCredit}
+            />
+          </TabsContent>
+          <TabsContent value="RECHAZADO" className="mt-6">
+            <CreditList
+              credits={filteredCredits}
+              onCreditClick={setSelectedCredit}
+            />
+          </TabsContent>
+        </Tabs>
+      </main>
+
+      {/* --- Modales --- */}
+
+      {/* Modal de Detalles del Crédito */}
+      <CreditModal
+        credit={selectedCredit}
+        onClose={() => setSelectedCredit(null)}
+        onApprove={handleApprove}
+        onReject={handleReject}
+        onShowContract={() => setShowContract(true)}
+      />
+
+      {/* Modal del Contrato (PDF/HTML) */}
+      <ContractModal
+        credit={selectedCredit}
+        adminName={`${admin.nombre} ${admin.apellido}`} // Pasa el nombre del admin
+        logoBase64={banorteLogo}
+        show={showContract}
+        onClose={() => setShowContract(false)}
+      />
+    </div>
+  );
+}
+
+// ====================================================================
+// 2. Componente: Lista de Créditos
+// ====================================================================
+interface CreditListProps {
+  credits: CreditoConNombreCliente[];
+  onCreditClick: (credit: CreditoConNombreCliente) => void;
+}
+
+function CreditList({ credits, onCreditClick }: CreditListProps) {
+  if (credits.length === 0) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <Check className="h-12 w-12 text-[#6CC04A] mb-4" />
+          <p className="text-muted-foreground">
+            No hay solicitudes en esta categoría.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {credits.map((credit) => (
+        <CreditCard
+          key={credit.credito.id_cred}
+          credit={credit}
+          onClick={onCreditClick}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ====================================================================
+// 3. Componente: Tarjeta de Crédito Individual
+// ====================================================================
+interface CreditCardProps {
+  credit: CreditoConNombreCliente;
+  onClick: (credit: CreditoConNombreCliente) => void;
+}
+
+function CreditCard({ credit, onClick }: CreditCardProps) {
+  const { credito, cliente_nombre, cliente_apellido, cliente_credit_score } =
+    credit;
+
+  const getBadgeClass = (estado: CreditStatus) => {
+    switch (estado) {
+      case "PENDIENTE":
+        return "bg-[#FFA400] text-white hover:bg-[#FFA400]";
+      case "ACEPTADO":
+        return "bg-[#6CC04A] text-white hover:bg-[#6CC04A]";
+      case "RECHAZADO":
+        return "bg-[#EB0029] text-white hover:bg-[#EB0029]";
+    }
   };
+
+  const getScoreColor = (score: number) => {
+    return score >= 0.85
+      ? "text-green-600"
+      : score >= 0.65
+      ? "text-yellow-600"
+      : "text-red-600";
+  };
+
+  return (
+    <Card
+      className="cursor-pointer transition-all hover:shadow-lg hover:border-[#EB0029]"
+      onClick={() => onClick(credit)}
+    >
+      <CardContent className="pt-6">
+        <div className="space-y-3">
+          <div className="flex items-start justify-between">
+            <Badge className={getBadgeClass(credito.estado)}>
+              {credito.estado}
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              {new Date(credito.fecha_inicio).toLocaleDateString("es-MX")}
+            </span>
+          </div>
+
+          <div>
+            <p className="text-2xl font-bold text-foreground">
+              ${credito.prestamo.toLocaleString("es-MX")}
+            </p>
+            <p className="text-sm text-muted-foreground truncate">
+              {credito.descripcion}
+            </p>
+          </div>
+
+          <div className="pt-3 border-t space-y-2 text-sm">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Cliente:</span>
+              <span className="font-medium truncate">
+                {cliente_nombre} {cliente_apellido}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground ml-6">Credit Score:</span>
+              <span
+                className={`font-bold ${getScoreColor(cliente_credit_score)}`}
+              >
+                {cliente_credit_score}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Plazo:</span>
+              <span className="font-medium">
+                {credito.meses_originales} meses
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Percent className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Interés:</span>
+              <span className="font-medium">{credito.interes}%</span>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ====================================================================
+// 4. Componente: Modal de Detalles del Crédito
+// ====================================================================
+interface CreditModalProps {
+  credit: CreditoConNombreCliente | null;
+  onClose: () => void;
+  onApprove: (id: number) => void;
+  onReject: (id: number) => void;
+  onShowContract: () => void;
+}
+
+function CreditModal({
+  credit,
+  onClose,
+  onApprove,
+  onReject,
+  onShowContract,
+}: CreditModalProps) {
+  if (!credit) return null;
+
+  const { credito, cliente_nombre, cliente_apellido, cliente_credit_score } =
+    credit;
+  const monthlyPayment = calculateMonthlyPayment(
+    credito.prestamo,
+    credito.interes,
+    credito.meses_originales
+  );
+  const scoreColor =
+    cliente_credit_score >= 0.85
+      ? "text-green-600"
+      : cliente_credit_score >= 0.64
+      ? "text-yellow-600"
+      : "text-red-600";
+  const scoreLabel =
+    cliente_credit_score >= 0.85
+      ? " (Excelente)"
+      : cliente_credit_score > 0.64
+      ? " (Bueno)"
+      : " (Riesgo)";
+
+  return (
+    <Dialog open={credit !== null} onOpenChange={onClose}>
+      <DialogContent className="w-[70vw] max-w-none max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Detalles de la Solicitud</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {/* Client info */}
+          <div>
+            <h3 className="font-semibold mb-3 text-[#EB0029]">
+              Información del Cliente
+            </h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Nombre Completo:</span>
+                <span className="font-medium">
+                  {cliente_nombre} {cliente_apellido}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">ID Cliente:</span>
+                <span className="font-medium">{credito.cliente_id}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Credit Score:</span>
+                <span className={`font-bold ${scoreColor}`}>
+                  {cliente_credit_score}
+                  {scoreLabel}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  Fecha de Solicitud:
+                </span>
+                <span className="font-medium">
+                  {new Date(credito.fecha_inicio).toLocaleDateString("es-MX")}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Credit details */}
+          <div className="pt-4 border-t">
+            <h3 className="font-semibold mb-3 text-[#EB0029]">
+              Detalles del Crédito
+            </h3>
+            <div className="space-y-3">
+              <InfoRow
+                icon={DollarSign}
+                label="Monto solicitado"
+                value={`$${credito.prestamo.toLocaleString("es-MX")}`}
+                isLarge
+              />
+              <InfoRow
+                icon={Clock}
+                label="Plazo"
+                value={`${credito.meses_originales} meses`}
+              />
+              <InfoRow
+                icon={Percent}
+                label="Tasa de interés"
+                value={`${credito.interes}% anual`}
+              />
+              <div className="pt-2 border-t">
+                <p className="text-sm text-muted-foreground mb-1">Categoría:</p>
+                <p className="text-sm font-medium">{credito.categoria}</p>
+              </div>
+              <div className="pt-2 border-t">
+                <p className="text-sm text-muted-foreground mb-1">
+                  Descripción:
+                </p>
+                <p className="text-sm font-medium">{credito.descripcion}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Financial summary */}
+          <div className="pt-4 border-t">
+            <h3 className="font-semibold mb-3 text-[#EB0029]">
+              Resumen Financiero
+            </h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Pago mensual:</span>
+                <span className="font-semibold">
+                  $
+                  {monthlyPayment.toLocaleString("es-MX", {
+                    minimumFractionDigits: 2,
+                  })}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  Ahorro mensual estimado:
+                </span>
+                <span className="font-semibold text-[#6CC04A]">
+                  $
+                  {(
+                    credito.gasto_inicial_mes - credito.gasto_final_mes
+                  ).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* --- Botones de Acción --- */}
+          <div className="pt-4 border-t flex flex-col gap-3">
+            {/* Solo muestra "Visualizar Contrato" si NO está RECHAZADO */}
+            {credito.estado !== "RECHAZADO" && (
+              <BanorteButton
+                variant="secondary"
+                className="w-full border-[#EB0029] text-[#EB0029] hover:bg-[#EB0029] hover:text-white"
+                onClick={onShowContract}
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                Visualizar Contrato
+              </BanorteButton>
+            )}
+
+            {/* Solo muestra "Aprobar/Rechazar" si está PENDIENTE */}
+            {credito.estado === "PENDIENTE" && (
+              <div className="flex gap-3">
+                <BanorteButton
+                  variant="primary"
+                  className="flex-1 bg-[#6CC04A] hover:bg-[#5CB03A] text-white"
+                  onClick={() => onApprove(credito.id_cred)}
+                >
+                  <Check className="mr-2 h-4 w-4" />
+                  Aprobar
+                </BanorteButton>
+                <BanorteButton
+                  variant="secondary"
+                  className="flex-1 border-destructive text-destructive hover:bg-destructive hover:text-white"
+                  onClick={() => onReject(credito.id_cred)}
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Rechazar
+                </BanorteButton>
+              </div>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ====================================================================
+// 5. Componente: Modal del Contrato
+// ====================================================================
+interface ContractModalProps {
+  credit: CreditoConNombreCliente | null;
+  adminName: string;
+  logoBase64: string;
+  show: boolean;
+  onClose: () => void;
+}
+
+function ContractModal({
+  credit,
+  adminName,
+  logoBase64,
+  show,
+  onClose,
+}: ContractModalProps) {
+  if (!credit) return null;
 
   const handleDownloadContract = async () => {
-    if (!selectedCredit) return;
+    if (!credit) return;
 
     try {
       // Generate HTML content with SVG logo
-      const contractHTML = await generateContractHTML(selectedCredit);
+      const contractHTML = await generateContractHTML(
+        credit,
+        adminName,
+        logoBase64,
+        false // false para modo PDF
+      );
 
       // Create a temporary iframe to render the HTML for PDF conversion
       const iframe = document.createElement("iframe");
@@ -160,7 +647,7 @@ export default function AdminCredits() {
               error
             );
             // Fallback to HTML download
-            downloadAsHTML(contractHTML, selectedCredit.id_cred);
+            downloadAsHTML(contractHTML, credit.credito.id_cred);
           }
           document.body.removeChild(iframe);
         }, 1000);
@@ -168,765 +655,315 @@ export default function AdminCredits() {
     } catch (error) {
       console.error("Error generating contract:", error);
       // Fallback to simple HTML generation
-      const contractHTML = await generateContractHTML(selectedCredit);
-      downloadAsHTML(contractHTML, selectedCredit.id_cred);
+      const contractHTML = await generateContractHTML(
+        credit,
+        adminName,
+        logoBase64,
+        false
+      );
+      downloadAsHTML(contractHTML, credit.credito.id_cred);
     }
   };
-
-  const downloadAsHTML = (content: string, creditId: number) => {
-    const blob = new Blob([content], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `contrato-${creditId}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const generateContractHTML = async (credit: Credito): Promise<string> => {
-    const monthlyPayment = calculateMonthlyPayment(
-      credit.prestamo,
-      credit.interes,
-      credit.meses_originales
-    );
-
-    // Try to load the SVG logo
-    let logoBase64 = "";
-    try {
-      logoBase64 = await getSvgAsBase64("/images/banorte.svg");
-    } catch (error) {
-      console.error("Could not load SVG logo:", error);
-    }
-
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Contrato de Crédito Verde - Banorte</title>
-        <style>
-          @page { 
-            size: A4; 
-            margin: 2cm; 
-          }
-          body { 
-            font-family: Arial, sans-serif; 
-            max-width: 800px; 
-            margin: 0 auto; 
-            padding: 20px; 
-            line-height: 1.6; 
-            color: #333;
-          }
-          .header { 
-            text-align: center; 
-            border-bottom: 3px solid #EB0029; 
-            padding-bottom: 20px; 
-            margin-bottom: 30px; 
-          }
-          .logo-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 10px;
-          }
-          .logo-svg {
-            width: 80px;
-            height: auto;
-          }
-          .logo-text { 
-            color: #EB0029; 
-            font-size: 32px; 
-            font-weight: bold; 
-          }
-          .title { 
-            font-size: 24px; 
-            margin-top: 10px; 
-            color: #333; 
-            font-weight: bold;
-          }
-          .section { 
-            margin: 30px 0; 
-            page-break-inside: avoid;
-          }
-          .section-title { 
-            font-size: 18px; 
-            font-weight: bold; 
-            color: #EB0029; 
-            margin-bottom: 15px; 
-            border-bottom: 2px solid #eee; 
-            padding-bottom: 5px; 
-          }
-          .field { 
-            margin: 10px 0; 
-            display: flex; 
-          }
-          .field-label { 
-            font-weight: bold; 
-            min-width: 200px; 
-          }
-          .field-value { 
-            flex: 1; 
-          }
-          .footer { 
-            margin-top: 50px; 
-            padding-top: 20px; 
-            border-top: 2px solid #eee; 
-            text-align: center; 
-            color: #666; 
-            font-size: 12px; 
-          }
-          .signature-section { 
-            margin-top: 60px; 
-            display: flex; 
-            justify-content: space-around; 
-            page-break-inside: avoid;
-          }
-          .signature-box { 
-            text-align: center; 
-          }
-          .signature-line { 
-            border-top: 2px solid #333; 
-            width: 200px; 
-            margin: 40px auto 10px; 
-          }
-          @media print {
-            body { 
-              print-color-adjust: exact; 
-              -webkit-print-color-adjust: exact; 
-            }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div class="logo-container">
-            ${
-              logoBase64
-                ? `<img src="${logoBase64}" alt="Banorte Logo" class="logo-svg" />`
-                : ""
-            }
-            <div class="logo-text">BANORTE</div>
-          </div>
-          <div class="title">CONTRATO DE CRÉDITO VERDE</div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">INFORMACIÓN DEL CLIENTE</div>
-          <div class="field">
-            <div class="field-label">Nombre:</div>
-            <div class="field-value">Cliente ${credit.cliente_id}</div>
-          </div>
-          <div class="field">
-            <div class="field-label">ID Cliente:</div>
-            <div class="field-value">${credit.cliente_id}</div>
-          </div>
-          <div class="field">
-            <div class="field-label">Fecha de Contrato:</div>
-            <div class="field-value">${new Date(
-              credit.fecha_inicio
-            ).toLocaleDateString("es-MX", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}</div>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">TÉRMINOS DEL CRÉDITO</div>
-          <div class="field">
-            <div class="field-label">Monto del Préstamo:</div>
-            <div class="field-value">$${credit.prestamo.toLocaleString(
-              "es-MX",
-              { minimumFractionDigits: 2 }
-            )} MXN</div>
-          </div>
-          <div class="field">
-            <div class="field-label">Tasa de Interés Anual:</div>
-            <div class="field-value">${credit.interes}%</div>
-          </div>
-          <div class="field">
-            <div class="field-label">Plazo:</div>
-            <div class="field-value">${credit.meses_originales} meses</div>
-          </div>
-          <div class="field">
-            <div class="field-label">Pago Mensual:</div>
-            <div class="field-value">$${monthlyPayment.toLocaleString("es-MX", {
-              minimumFractionDigits: 2,
-            })} MXN</div>
-          </div>
-          <div class="field">
-            <div class="field-label">Categoría:</div>
-            <div class="field-value">${credit.categoria}</div>
-          </div>
-          <div class="field">
-            <div class="field-label">Descripción:</div>
-            <div class="field-value">${credit.descripcion}</div>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">IMPACTO AMBIENTAL ESTIMADO</div>
-          <div class="field">
-            <div class="field-label">Gasto Mensual Inicial:</div>
-            <div class="field-value">$${credit.gasto_inicial_mes.toLocaleString(
-              "es-MX",
-              { minimumFractionDigits: 2 }
-            )} MXN</div>
-          </div>
-          <div class="field">
-            <div class="field-label">Gasto Mensual Proyectado:</div>
-            <div class="field-value">$${credit.gasto_final_mes.toLocaleString(
-              "es-MX",
-              { minimumFractionDigits: 2 }
-            )} MXN</div>
-          </div>
-          <div class="field">
-            <div class="field-label">Ahorro Mensual Estimado:</div>
-            <div class="field-value">$${(
-              credit.gasto_inicial_mes - credit.gasto_final_mes
-            ).toLocaleString("es-MX", { minimumFractionDigits: 2 })} MXN</div>
-          </div>
-        </div>
-
-        <div class="section">
-          <p style="text-align: justify; color: #666; font-size: 14px;">
-            El presente contrato establece los términos y condiciones bajo los cuales BANORTE otorga un crédito verde al cliente mencionado. 
-            El cliente se compromete a realizar los pagos mensuales en las fechas establecidas y a utilizar los fondos exclusivamente para 
-            los fines ambientales especificados en este documento.
-          </p>
-        </div>
-
-        <div class="signature-section">
-          <div class="signature-box">
-            <div class="signature-line"></div>
-            <div>Firma del Cliente</div>
-            <div style="font-size: 12px; color: #666;">Cliente ${
-              credit.cliente_id
-            }</div>
-          </div>
-          <div class="signature-box">
-            <div class="signature-line"></div>
-            <div>Firma del Representante</div>
-            <div style="font-size: 12px; color: #666;">BANORTE</div>
-          </div>
-        </div>
-
-        <div class="footer">
-          <p>BANORTE - Créditos Verdes | Sucursal Principal</p>
-          <p>Este documento es legalmente vinculante una vez firmado por ambas partes</p>
-          <p>Documento generado el ${new Date().toLocaleDateString("es-MX", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}</p>
-        </div>
-      </body>
-      </html>
-    `;
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <AdminTopBar />
-        <main className="container mx-auto px-4 py-8">
-          <p className="text-center text-muted-foreground">
-            Cargando solicitudes...
-          </p>
-        </main>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminTopBar />
+    <Dialog open={show} onOpenChange={onClose}>
+      <DialogContent className="w-[70vw] max-w-none max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-between">
+            <span>Contrato de Crédito Verde</span>
+            <BanorteButton
+              variant="secondary"
+              className="ml-auto"
+              onClick={handleDownloadContract}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Descargar PDF
+            </BanorteButton>
+          </DialogTitle>
+        </DialogHeader>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">
-            Solicitudes Pendientes
-          </h1>
-          <p className="text-muted-foreground">
-            {pendingCredits.length} solicitudes esperando aprobación
-          </p>
-        </div>
+        {/* El HTML se renderiza directamente aquí para la visualización */}
+        <div
+          className="border rounded-lg p-8 bg-white text-black overflow-y-auto"
+          dangerouslySetInnerHTML={{
+            __html: generateContractHTML(credit, adminName, logoBase64, true), // 'true' para modo preview
+          }}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
 
-        {pendingCredits.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Check className="h-12 w-12 text-[#6CC04A] mb-4" />
-              <p className="text-muted-foreground">
-                No hay solicitudes pendientes
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {pendingCredits.map((credit) => (
-              <Card
-                key={credit.id_cred}
-                className="cursor-pointer transition-all hover:shadow-lg hover:border-[#EB0029]"
-                onClick={() => setSelectedCredit(credit)}
-              >
-                <CardContent className="pt-6">
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between">
-                      <Badge className="bg-[#FFA400] text-white">
-                        Pendiente
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(credit.fecha_inicio).toLocaleDateString(
-                          "es-MX"
-                        )}
-                      </span>
-                    </div>
+// ====================================================================
+// 6. Funciones de Ayuda
+// ====================================================================
 
-                    <div>
-                      <p className="text-2xl font-bold text-foreground">
-                        ${credit.prestamo.toLocaleString("es-MX")}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {credit.descripcion}
-                      </p>
-                    </div>
-
-                    <div className="pt-3 border-t space-y-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Cliente:</span>
-                        <span className="font-medium">{credit.cliente_id}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Plazo:</span>
-                        <span className="font-medium">
-                          {credit.meses_originales} meses
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Percent className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Interés:</span>
-                        <span className="font-medium">{credit.interes}%</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        <Dialog
-          open={selectedCredit !== null}
-          onOpenChange={() => setSelectedCredit(null)}
-        >
-          <DialogContent className="w-[70vw] max-w-none max-h-[90vh] overflow-y-auto">
-            {selectedCredit && (
-              <>
-                <DialogHeader>
-                  <DialogTitle>Detalles de la Solicitud</DialogTitle>
-                </DialogHeader>
-
-                <div className="space-y-6">
-                  {/* Client info */}
-                  <div>
-                    <h3 className="font-semibold mb-3 text-[#EB0029]">
-                      Información del Cliente
-                    </h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          ID Cliente:
-                        </span>
-                        <span className="font-medium">
-                          {selectedCredit.cliente_id}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Fecha de Solicitud:
-                        </span>
-                        <span className="font-medium">
-                          {new Date(
-                            selectedCredit.fecha_inicio
-                          ).toLocaleDateString("es-MX")}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Credit details */}
-                  <div className="pt-4 border-t">
-                    <h3 className="font-semibold mb-3 text-[#EB0029]">
-                      Detalles del Crédito
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="flex items-start gap-3">
-                        <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5" />
-                        <div className="flex-1">
-                          <p className="text-sm text-muted-foreground">
-                            Monto solicitado
-                          </p>
-                          <p className="font-semibold text-lg">
-                            ${selectedCredit.prestamo.toLocaleString("es-MX")}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-3">
-                        <Clock className="h-5 w-5 text-muted-foreground mt-0.5" />
-                        <div className="flex-1">
-                          <p className="text-sm text-muted-foreground">Plazo</p>
-                          <p className="font-semibold">
-                            {selectedCredit.meses_originales} meses
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-3">
-                        <Percent className="h-5 w-5 text-muted-foreground mt-0.5" />
-                        <div className="flex-1">
-                          <p className="text-sm text-muted-foreground">
-                            Tasa de interés
-                          </p>
-                          <p className="font-semibold">
-                            {selectedCredit.interes}% anual
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="pt-2 border-t">
-                        <p className="text-sm text-muted-foreground mb-1">
-                          Categoría:
-                        </p>
-                        <p className="text-sm font-medium">
-                          {selectedCredit.categoria}
-                        </p>
-                      </div>
-
-                      <div className="pt-2 border-t">
-                        <p className="text-sm text-muted-foreground mb-1">
-                          Descripción:
-                        </p>
-                        <p className="text-sm font-medium">
-                          {selectedCredit.descripcion}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Financial summary */}
-                  <div className="pt-4 border-t">
-                    <h3 className="font-semibold mb-3 text-[#EB0029]">
-                      Resumen Financiero
-                    </h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Pago mensual:
-                        </span>
-                        <span className="font-semibold">
-                          $
-                          {calculateMonthlyPayment(
-                            selectedCredit.prestamo,
-                            selectedCredit.interes,
-                            selectedCredit.meses_originales
-                          ).toLocaleString("es-MX", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Ahorro mensual estimado:
-                        </span>
-                        <span className="font-semibold text-[#6CC04A]">
-                          $
-                          {(
-                            selectedCredit.gasto_inicial_mes -
-                            selectedCredit.gasto_final_mes
-                          ).toLocaleString("es-MX", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t flex flex-col gap-3">
-                    <BanorteButton
-                      variant="secondary"
-                      className="w-full border-[#EB0029] text-[#EB0029] hover:bg-[#EB0029] hover:text-white"
-                      onClick={() => setShowContract(true)}
-                    >
-                      <Eye className="mr-2 h-4 w-4" />
-                      Visualizar Contrato
-                    </BanorteButton>
-
-                    <div className="flex gap-3">
-                      <BanorteButton
-                        variant="primary"
-                        className="flex-1 bg-[#6CC04A] hover:bg-[#5CB03A]"
-                        onClick={() => handleApprove(selectedCredit.id_cred)}
-                      >
-                        <Check className="mr-2 h-4 w-4" />
-                        Aprobar
-                      </BanorteButton>
-                      <BanorteButton
-                        variant="secondary"
-                        className="flex-1 border-destructive text-destructive hover:bg-destructive hover:text-white"
-                        onClick={() => handleReject(selectedCredit.id_cred)}
-                      >
-                        <X className="mr-2 h-4 w-4" />
-                        Rechazar
-                      </BanorteButton>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={showContract} onOpenChange={setShowContract}>
-          <DialogContent className="w-[70vw] max-w-none max-h-[90vh] overflow-y-auto">
-            {selectedCredit && (
-              <>
-                <DialogHeader>
-                  <DialogTitle className="flex items-center justify-between">
-                    <span>Contrato de Crédito Verde</span>
-                    <BanorteButton
-                      variant="secondary"
-                      className="ml-auto"
-                      onClick={handleDownloadContract}
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Descargar PDF
-                    </BanorteButton>
-                  </DialogTitle>
-                </DialogHeader>
-
-                <div className="border rounded-lg p-8 bg-white text-black">
-                  {/* Contract Header */}
-                  <div className="text-center border-b-4 border-[#EB0029] pb-6 mb-8">
-                    <div className="flex items-center justify-center gap-4 mb-4">
-                      {banorteLogo && (
-                        <img
-                          src={banorteLogo}
-                          alt="Banorte Logo"
-                          className="w-16 h-16 object-contain"
-                        />
-                      )}
-                      <div className="text-[#EB0029] text-4xl font-bold">
-                        BANORTE
-                      </div>
-                    </div>
-                    <div className="text-2xl font-semibold">
-                      CONTRATO DE CRÉDITO VERDE
-                    </div>
-                  </div>
-
-                  {/* Client Information */}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-bold text-[#EB0029] mb-4 border-b-2 pb-2">
-                      INFORMACIÓN DEL CLIENTE
-                    </h3>
-                    <div className="space-y-2">
-                      <div className="flex">
-                        <span className="font-bold min-w-[200px]">Nombre:</span>
-                        <span>Cliente {selectedCredit.cliente_id}</span>
-                      </div>
-                      <div className="flex">
-                        <span className="font-bold min-w-[200px]">
-                          ID Cliente:
-                        </span>
-                        <span>{selectedCredit.cliente_id}</span>
-                      </div>
-                      <div className="flex">
-                        <span className="font-bold min-w-[200px]">
-                          Fecha de Contrato:
-                        </span>
-                        <span>
-                          {new Date(
-                            selectedCredit.fecha_inicio
-                          ).toLocaleDateString("es-MX", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Credit Terms */}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-bold text-[#EB0029] mb-4 border-b-2 pb-2">
-                      TÉRMINOS DEL CRÉDITO
-                    </h3>
-                    <div className="space-y-2">
-                      <div className="flex">
-                        <span className="font-bold min-w-[200px]">
-                          Monto del Préstamo:
-                        </span>
-                        <span>
-                          $
-                          {selectedCredit.prestamo.toLocaleString("es-MX", {
-                            minimumFractionDigits: 2,
-                          })}{" "}
-                          MXN
-                        </span>
-                      </div>
-                      <div className="flex">
-                        <span className="font-bold min-w-[200px]">
-                          Tasa de Interés Anual:
-                        </span>
-                        <span>{selectedCredit.interes}%</span>
-                      </div>
-                      <div className="flex">
-                        <span className="font-bold min-w-[200px]">Plazo:</span>
-                        <span>{selectedCredit.meses_originales} meses</span>
-                      </div>
-                      <div className="flex">
-                        <span className="font-bold min-w-[200px]">
-                          Pago Mensual:
-                        </span>
-                        <span>
-                          $
-                          {calculateMonthlyPayment(
-                            selectedCredit.prestamo,
-                            selectedCredit.interes,
-                            selectedCredit.meses_originales
-                          ).toLocaleString("es-MX", {
-                            minimumFractionDigits: 2,
-                          })}{" "}
-                          MXN
-                        </span>
-                      </div>
-                      <div className="flex">
-                        <span className="font-bold min-w-[200px]">
-                          Categoría:
-                        </span>
-                        <span>{selectedCredit.categoria}</span>
-                      </div>
-                      <div className="flex">
-                        <span className="font-bold min-w-[200px]">
-                          Descripción:
-                        </span>
-                        <span>{selectedCredit.descripcion}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Environmental Impact */}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-bold text-[#EB0029] mb-4 border-b-2 pb-2">
-                      IMPACTO AMBIENTAL ESTIMADO
-                    </h3>
-                    <div className="space-y-2">
-                      <div className="flex">
-                        <span className="font-bold min-w-[200px]">
-                          Gasto Mensual Inicial:
-                        </span>
-                        <span>
-                          $
-                          {selectedCredit.gasto_inicial_mes.toLocaleString(
-                            "es-MX",
-                            {
-                              minimumFractionDigits: 2,
-                            }
-                          )}{" "}
-                          MXN
-                        </span>
-                      </div>
-                      <div className="flex">
-                        <span className="font-bold min-w-[200px]">
-                          Gasto Mensual Proyectado:
-                        </span>
-                        <span>
-                          $
-                          {selectedCredit.gasto_final_mes.toLocaleString(
-                            "es-MX",
-                            { minimumFractionDigits: 2 }
-                          )}{" "}
-                          MXN
-                        </span>
-                      </div>
-                      <div className="flex">
-                        <span className="font-bold min-w-[200px]">
-                          Ahorro Mensual Estimado:
-                        </span>
-                        <span className="text-[#6CC04A] font-semibold">
-                          $
-                          {(
-                            selectedCredit.gasto_inicial_mes -
-                            selectedCredit.gasto_final_mes
-                          ).toLocaleString("es-MX", {
-                            minimumFractionDigits: 2,
-                          })}{" "}
-                          MXN
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Terms and Conditions */}
-                  <div className="mb-12">
-                    <p className="text-justify text-sm leading-relaxed text-gray-700">
-                      El presente contrato establece los términos y condiciones
-                      bajo los cuales BANORTE otorga un crédito verde al cliente
-                      mencionado. El cliente se compromete a realizar los pagos
-                      mensuales en las fechas establecidas y a utilizar los
-                      fondos exclusivamente para los fines ambientales
-                      especificados en este documento.
-                    </p>
-                  </div>
-
-                  {/* Signatures */}
-                  <div className="flex justify-around mt-16">
-                    <div className="text-center">
-                      <div className="border-t-2 border-black w-48 mb-2 mt-12"></div>
-                      <div className="font-semibold">Firma del Cliente</div>
-                      <div className="text-sm text-gray-600">
-                        Cliente {selectedCredit.cliente_id}
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="border-t-2 border-black w-48 mb-2 mt-12"></div>
-                      <div className="font-semibold">
-                        Firma del Representante
-                      </div>
-                      <div className="text-sm text-gray-600">BANORTE</div>
-                    </div>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="mt-12 pt-6 border-t-2 text-center text-xs text-gray-600">
-                    <p>BANORTE - Créditos Verdes | Sucursal Principal</p>
-                    <p>
-                      Este documento es legalmente vinculante una vez firmado
-                      por ambas partes
-                    </p>
-                    <p>
-                      Documento generado el{" "}
-                      {new Date().toLocaleDateString("es-MX", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </p>
-                  </div>
-                </div>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
-      </main>
+/**
+ * Componente helper para filas de información en el modal
+ */
+function InfoRow({ icon: Icon, label, value, isLarge = false }: any) {
+  return (
+    <div className="flex items-start gap-3">
+      <Icon className="h-5 w-5 text-muted-foreground mt-0.5" />
+      <div className="flex-1">
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <p className={`font-semibold ${isLarge ? "text-lg" : ""}`}>{value}</p>
+      </div>
     </div>
   );
 }
+
+/**
+ * Calcula el pago mensual
+ */
+const calculateMonthlyPayment = (
+  principal: number,
+  annualRate: number,
+  months: number
+) => {
+  if (annualRate === 0) return principal / months; // Caso sin interés
+  const monthlyRate = annualRate / 100 / 12;
+  const payment =
+    (principal * monthlyRate * Math.pow(1 + monthlyRate, months)) /
+    (Math.pow(1 + monthlyRate, months) - 1);
+  return isNaN(payment) ? 0 : payment;
+};
+
+/**
+ * Genera el HTML del contrato
+ */
+const generateContractHTML = (
+  creditoConCliente: CreditoConNombreCliente,
+  adminName: string,
+  logoBase64: string,
+  isPreview: boolean = false
+): string => {
+  const { credito, cliente_nombre, cliente_apellido, cliente_credit_score } =
+    creditoConCliente;
+  const clienteNombreCompleto = `${cliente_nombre} ${cliente_apellido}`;
+  const monthlyPayment = calculateMonthlyPayment(
+    credito.prestamo,
+    credito.interes,
+    credito.meses_originales
+  );
+
+  // Determinar si mostrar nombres en negritas (solo para créditos aprobados)
+  const isApproved = credito.estado === "ACEPTADO";
+  const clienteNameStyle = isApproved
+    ? "font-weight: bold; color: #000;"
+    : "color: #666;";
+  const adminNameStyle = isApproved
+    ? "font-weight: bold; color: #000;"
+    : "color: #666;";
+
+  // El estilo es un poco diferente si es un preview (sin @page)
+  const previewStyles = isPreview
+    ? `
+    body { 
+      font-family: Arial, sans-serif; 
+      max-width: 800px; 
+      margin: 0 auto; 
+      padding: 20px; 
+      line-height: 1.6; 
+      color: #333;
+    }
+  `
+    : `
+    @page { 
+      size: A4; 
+      margin: 2cm; 
+    }
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 0;
+      padding: 0;
+      line-height: 1.6; 
+      color: #333;
+    }
+  `;
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Contrato de Crédito Verde - Banorte</title>
+      <style>
+        ${previewStyles}
+        .header { text-align: center; border-bottom: 3px solid #EB0029; padding-bottom: 20px; margin-bottom: 30px; }
+        .logo-container { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px; }
+        .logo-svg { width: 80px; height: auto; }
+        .logo-text { color: #EB0029; font-size: 32px; font-weight: bold; }
+        .title { font-size: 24px; margin-top: 10px; color: #333; font-weight: bold; }
+        .section { margin: 30px 0; page-break-inside: avoid; }
+        .section-title { font-size: 18px; font-weight: bold; color: #EB0029; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+        .field { margin: 10px 0; display: flex; }
+        .field-label { font-weight: bold; min-width: 200px; }
+        .field-value { flex: 1; }
+        .footer { margin-top: 50px; padding-top: 20px; border-top: 2px solid #eee; text-align: center; color: #666; font-size: 12px; }
+        .signature-section { margin-top: 60px; display: flex; justify-content: space-around; page-break-inside: avoid; }
+        .signature-box { text-align: center; }
+        .signature-line { border-top: 2px solid #333; width: 200px; margin: 40px auto 10px; }
+        @media print {
+          body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="logo-container">
+          ${
+            logoBase64
+              ? `<img src="${logoBase64}" alt="Banorte Logo" class="logo-svg" />`
+              : ""
+          }
+          <div class="logo-text">BANORTE</div>
+        </div>
+        <div class="title">CONTRATO DE CRÉDITO VERDE${
+          isApproved
+            ? ' - <span style="color: #6CC04A; font-weight: bold;">APROBADO</span>'
+            : ""
+        }</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">INFORMACIÓN DEL CLIENTE</div>
+        <div class="field">
+          <div class="field-label">Nombre:</div>
+          <div class="field-value">${clienteNombreCompleto}</div>
+        </div>
+        <div class="field">
+          <div class="field-label">ID Cliente:</div>
+          <div class="field-value">${credito.cliente_id}</div>
+        </div>
+        <div class="field">
+          <div class="field-label">Credit Score:</div>
+          <div class="field-value">${cliente_credit_score.toFixed(2)}</div>
+        </div>
+        <div class="field">
+          <div class="field-label">Fecha de Contrato:</div>
+          <div class="field-value">${new Date(
+            credito.fecha_inicio
+          ).toLocaleDateString("es-MX", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">TÉRMINOS DEL CRÉDITO</div>
+        <div class="field">
+          <div class="field-label">Monto del Préstamo:</div>
+          <div class="field-value">$${credito.prestamo.toLocaleString("es-MX", {
+            minimumFractionDigits: 2,
+          })} MXN</div>
+        </div>
+        <div class="field">
+          <div class="field-label">Tasa de Interés Anual:</div>
+          <div class="field-value">${credito.interes}%</div>
+        </div>
+        <div class="field">
+          <div class="field-label">Plazo:</div>
+          <div class="field-value">${credito.meses_originales} meses</div>
+        </div>
+        <div class="field">
+          <div class="field-label">Pago Mensual:</div>
+          <div class="field-value">$${monthlyPayment.toLocaleString("es-MX", {
+            minimumFractionDigits: 2,
+          })} MXN</div>
+        </div>
+        <div class="field">
+          <div class="field-label">Categoría:</div>
+          <div class="field-value">${credito.categoria}</div>
+        </div>
+        <div class="field">
+          <div class="field-label">Descripción:</div>
+          <div class="field-value">${credito.descripcion}</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">IMPACTO AMBIENTAL ESTIMADO</div>
+        <div class="field">
+          <div class="field-label">Gasto Mensual Inicial:</div>
+          <div class="field-value">$${credito.gasto_inicial_mes.toLocaleString(
+            "es-MX",
+            { minimumFractionDigits: 2 }
+          )} MXN</div>
+        </div>
+        <div class="field">
+          <div class="field-label">Gasto Mensual Proyectado:</div>
+          <div class="field-value">$${credito.gasto_final_mes.toLocaleString(
+            "es-MX",
+            { minimumFractionDigits: 2 }
+          )} MXN</div>
+        </div>
+        <div class="field">
+          <div class="field-label">Ahorro Mensual Estimado:</div>
+          <div class="field-value" style="color: #6CC04A; font-weight: bold;">$${(
+            credito.gasto_inicial_mes - credito.gasto_final_mes
+          ).toLocaleString("es-MX", { minimumFractionDigits: 2 })} MXN</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <p style="text-align: justify; color: #666; font-size: 14px;">
+          El presente contrato establece los términos y condiciones bajo los cuales BANORTE otorga un crédito verde al cliente mencionado. 
+          El cliente se compromete a realizar los pagos mensuales en las fechas establecidas y a utilizar los fondos exclusivamente para 
+          los fines ambientales especificados en este documento.
+        </p>
+      </div>
+
+      <div class="signature-section">
+        <div class="signature-box">
+          ${
+            isApproved
+              ? `<div style="font-size: 14px; ${clienteNameStyle} margin-bottom: 10px;">${clienteNombreCompleto}</div>`
+              : ""
+          }
+          <div class="signature-line"></div>
+          <div style="margin-top: 10px;">Cliente</div>
+          <div style="font-size: 12px; color: #666;">${clienteNombreCompleto}</div>
+        </div>
+        <div class="signature-box">
+          ${
+            isApproved
+              ? `<div style="font-size: 14px; ${adminNameStyle} margin-bottom: 10px;">${adminName}</div>`
+              : ""
+          }
+          <div class="signature-line"></div>
+          <div style="margin-top: 10px;">Representante</div>
+          <div style="font-size: 12px; color: #666;">${adminName} (BANORTE)</div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p>BANORTE - Créditos Verdes | Sucursal Principal</p>
+        <p>Este documento es legalmente vinculante una vez firmado por ambas partes</p>
+        <p>Documento generado el ${new Date().toLocaleDateString("es-MX", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })}</p>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
+/**
+ * Descarga el contrato como un archivo .html
+ */
+const downloadAsHTML = (content: string, creditId: number) => {
+  const blob = new Blob([content], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `contrato-${creditId}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};

@@ -32,11 +32,27 @@ export interface MonthlyStats {
   };
 }
 
+export interface Credit {
+  id_cred: number;
+  prestamo: number;
+  interes: number;
+  meses_originales: number;
+  categoria: string;
+  descripcion: string;
+  gasto_inicial_mes: number;
+  gasto_final_mes: number;
+  estado: string;
+  fecha_inicio: string;
+  pagado: number;
+  restante: number;
+}
+
 export default function CreditsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStats | undefined>();
+  const [userCredits, setUserCredits] = useState<Credit[] | undefined>();
 
   useEffect(() => {
     const fetchMontlyStats = async () => {
@@ -49,29 +65,29 @@ export default function CreditsPage() {
         console.log(err);
       }
     };
+
+    const fetchUserCredits = async () => {
+      if (!user) return;
+      try {
+        const { data } = await api.get(`/clientes/${user.id}/creditos`);
+        console.log('credits', data);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setUserCredits(data.map((res: any) => res.credito));
+      } catch (err: unknown) {
+        console.log(err);
+      }
+    };
+
     fetchMontlyStats();
+    fetchUserCredits();
   }, [user]);
 
   if (!user) {
     return null;
   }
 
-  const userCredits = mockCredits.filter((c) => c.userId === user.id);
-  const approvedCredits = userCredits.filter((c) => c.status === 'approved');
-  const pendingCredits = userCredits.filter((c) => c.status === 'pending');
-
-  const totalMonthlySavings = mockSustainabilitySavings.reduce(
-    (sum, s) => sum + s.estimatedMonthlySavings,
-    0
-  );
-  const totalYearlySavings = mockSustainabilitySavings.reduce(
-    (sum, s) => sum + s.estimatedYearlySavings,
-    0
-  );
-  const totalCO2Reduction = mockSustainabilitySavings.reduce(
-    (sum, s) => sum + s.co2ReductionKg,
-    0
-  );
+  const approvedCredits = userCredits?.filter((c) => c.estado === 'ACEPTADO');
+  const pendingCredits = userCredits?.filter((c) => c.estado === 'PENDIENTE');
 
   return (
     <div className='min-h-screen bg-background'>
@@ -122,7 +138,7 @@ export default function CreditsPage() {
             </div>
 
             {/* Pending credits */}
-            {pendingCredits.length > 0 && (
+            {pendingCredits && pendingCredits.length > 0 && (
               <div>
                 <h2 className='text-xl font-semibold mb-4'>
                   Solicitudes pendientes
@@ -130,20 +146,20 @@ export default function CreditsPage() {
                 <div className='space-y-4'>
                   {pendingCredits.map((credit) => (
                     <Card
-                      key={credit.id}
+                      key={credit.id_cred}
                       className='cursor-pointer transition-shadow hover:shadow-lg'
                       onClick={() =>
-                        navigate(`/user/credits/details/${credit.id}`)
+                        navigate(`/user/credits/details/${credit.id_cred}`)
                       }
                     >
                       <CardContent className='p-6'>
                         <div className='flex items-start justify-between mb-4'>
                           <div>
                             <h3 className='font-semibold text-lg'>
-                              ${credit.amount.toLocaleString('es-MX')}
+                              ${credit.prestamo.toLocaleString('es-MX')}
                             </h3>
                             <p className='text-sm text-muted-foreground mt-1'>
-                              {credit.purpose}
+                              {credit.descripcion}
                             </p>
                           </div>
                           <Badge className='bg-[#FFA500] text-white'>
@@ -154,7 +170,7 @@ export default function CreditsPage() {
                           <div>
                             <p className='text-muted-foreground'>Solicitado</p>
                             <p className='font-medium'>
-                              {new Date(credit.createdAt).toLocaleDateString(
+                              {new Date(credit.fecha_inicio).toLocaleDateString(
                                 'es-MX'
                               )}
                             </p>
@@ -162,14 +178,12 @@ export default function CreditsPage() {
                           <div>
                             <p className='text-muted-foreground'>Plazo</p>
                             <p className='font-medium'>
-                              {credit.termMonths} meses
+                              {credit.meses_originales} meses
                             </p>
                           </div>
                           <div>
                             <p className='text-muted-foreground'>Tasa</p>
-                            <p className='font-medium'>
-                              {credit.interestRate}%
-                            </p>
+                            <p className='font-medium'>{credit.interes}%</p>
                           </div>
                         </div>
                       </CardContent>
@@ -180,106 +194,125 @@ export default function CreditsPage() {
             )}
 
             {/* Active/Approved credits */}
-            {approvedCredits.length > 0 && (
+            {approvedCredits && approvedCredits.length > 0 && (
               <div>
                 <h2 className='text-xl font-semibold mb-4'>Créditos activos</h2>
                 <div className='space-y-4'>
-                  {approvedCredits.map((credit) => (
-                    <Card
-                      key={credit.id}
-                      className='cursor-pointer transition-shadow hover:shadow-lg'
-                      onClick={() =>
-                        navigate(`/user/credits/details/${credit.id}`)
-                      }
-                    >
-                      <CardHeader>
-                        <div className='flex items-start justify-between'>
-                          <div>
-                            <CardTitle className='text-xl'>
-                              ${credit.amount.toLocaleString('es-MX')}
-                            </CardTitle>
+                  {approvedCredits.map((credit) => {
+                    const calculateRemainingMonths = () => {
+                      const startDate = new Date(credit.fecha_inicio);
+                      const currentDate = new Date();
+                      const monthsElapsed =
+                        (currentDate.getFullYear() - startDate.getFullYear()) *
+                          12 +
+                        (currentDate.getMonth() - startDate.getMonth());
+                      const monthsLeft = Math.max(
+                        0,
+                        credit.meses_originales - monthsElapsed
+                      );
+                      return monthsLeft;
+                    };
+                    const remainingMonths = calculateRemainingMonths();
+                    return (
+                      <Card
+                        key={credit.id_cred}
+                        className='cursor-pointer transition-shadow hover:shadow-lg'
+                        onClick={() =>
+                          navigate(`/user/credits/details/${credit.id_cred}`)
+                        }
+                      >
+                        <CardHeader>
+                          <div className='flex items-start justify-between'>
+                            <div>
+                              <CardTitle className='text-xl'>
+                                ${credit.prestamo.toLocaleString('es-MX')}
+                              </CardTitle>
+                            </div>
+                            <Badge className='bg-green-600 text-white'>
+                              Activo
+                            </Badge>
                           </div>
-                          <Badge className='bg-green-600 text-white'>
-                            Activo
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <p className='text-sm text-muted-foreground mb-4 line-clamp-2'>
-                          {credit.purpose}
-                        </p>
+                        </CardHeader>
+                        <CardContent>
+                          <p className='text-sm text-muted-foreground mb-4 line-clamp-2'>
+                            {credit.descripcion}
+                          </p>
 
-                        <div className='space-y-3'>
-                          <div className='flex items-center gap-2 text-sm'>
-                            <DollarSign className='h-4 w-4 text-muted-foreground' />
-                            <span className='text-muted-foreground'>
-                              Saldo:
-                            </span>
-                            <span className='font-semibold'>
-                              ${credit.remainingBalance.toLocaleString('es-MX')}
-                            </span>
+                          <div className='space-y-3'>
+                            <div className='flex items-center gap-2 text-sm'>
+                              <DollarSign className='h-4 w-4 text-muted-foreground' />
+                              <span className='text-muted-foreground'>
+                                Saldo:
+                              </span>
+                              <span className='font-semibold'>
+                                ${credit.restante.toLocaleString('es-MX')}
+                              </span>
+                            </div>
+
+                            <div className='flex items-center gap-2 text-sm'>
+                              <Clock className='h-4 w-4 text-muted-foreground' />
+                              <span className='text-muted-foreground'>
+                                Tiempo restante:
+                              </span>
+                              <span className='font-semibold'>
+                                {remainingMonths} meses
+                              </span>
+                            </div>
+
+                            <div className='flex items-center gap-2 text-sm'>
+                              <TrendingUp className='h-4 w-4 text-muted-foreground' />
+                              <span className='text-muted-foreground'>
+                                Pago mensual:
+                              </span>
+                              <span className='font-semibold'>
+                                $
+                                {credit.gasto_inicial_mes.toLocaleString(
+                                  'es-MX',
+                                  {
+                                    minimumFractionDigits: 2,
+                                  }
+                                )}
+                              </span>
+                            </div>
                           </div>
 
-                          <div className='flex items-center gap-2 text-sm'>
-                            <Clock className='h-4 w-4 text-muted-foreground' />
-                            <span className='text-muted-foreground'>
-                              Tiempo restante:
-                            </span>
-                            <span className='font-semibold'>
-                              {credit.remainingMonths} meses
-                            </span>
+                          {/* Progress bar */}
+                          <div className='mt-4'>
+                            <div className='flex justify-between text-xs text-muted-foreground mb-1'>
+                              <span>Progreso</span>
+                              <span>
+                                {Math.round(
+                                  ((credit.meses_originales - remainingMonths) /
+                                    credit.meses_originales) *
+                                    100
+                                )}
+                                %
+                              </span>
+                            </div>
+                            <div className='h-2 bg-secondary rounded-full overflow-hidden'>
+                              <div
+                                className='h-full bg-[#EB0029]'
+                                style={{
+                                  width: `${
+                                    ((credit.meses_originales -
+                                      remainingMonths) /
+                                      credit.meses_originales) *
+                                    100
+                                  }%`,
+                                }}
+                              />
+                            </div>
                           </div>
-
-                          <div className='flex items-center gap-2 text-sm'>
-                            <TrendingUp className='h-4 w-4 text-muted-foreground' />
-                            <span className='text-muted-foreground'>
-                              Pago mensual:
-                            </span>
-                            <span className='font-semibold'>
-                              $
-                              {credit.monthlyPayment.toLocaleString('es-MX', {
-                                minimumFractionDigits: 2,
-                              })}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Progress bar */}
-                        <div className='mt-4'>
-                          <div className='flex justify-between text-xs text-muted-foreground mb-1'>
-                            <span>Progreso</span>
-                            <span>
-                              {Math.round(
-                                ((credit.termMonths - credit.remainingMonths) /
-                                  credit.termMonths) *
-                                  100
-                              )}
-                              %
-                            </span>
-                          </div>
-                          <div className='h-2 bg-secondary rounded-full overflow-hidden'>
-                            <div
-                              className='h-full bg-[#EB0029]'
-                              style={{
-                                width: `${
-                                  ((credit.termMonths -
-                                    credit.remainingMonths) /
-                                    credit.termMonths) *
-                                  100
-                                }%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
             {/* Empty state for no active credits */}
-            {approvedCredits.length === 0 && (
+            {approvedCredits && approvedCredits.length === 0 && (
               <div>
                 <h2 className='text-xl font-semibold mb-4'>Créditos activos</h2>
                 <Card>
@@ -296,6 +329,13 @@ export default function CreditsPage() {
                     </Button>
                   </CardContent>
                 </Card>
+              </div>
+            )}
+
+            {/* Loading state */}
+            {userCredits === undefined && (
+              <div className='flex justify-center py-12'>
+                <div className='animate-spin rounded-full h-8 w-8 border-2 border-b-transparent border-[#EB0029]'></div>
               </div>
             )}
           </div>
