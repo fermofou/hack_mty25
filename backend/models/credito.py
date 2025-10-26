@@ -24,7 +24,7 @@ class Credito(CreditoBase, table=True):
     
     # Tu schema usa id_cred, así que lo respetamos
     id_cred: Optional[int] = Field(default=None, primary_key=True)
-    fecha_inicio: date = Field(default_factory=date.today)
+    fecha_inicio: Optional[date] = Field(default_factory=date.today)
     
     # Relaciones: Un crédito pertenece a UN cliente y a UN item
     cliente: "Cliente" = Relationship(back_populates="creditos")
@@ -35,7 +35,7 @@ class CreditoCreate(CreditoBase):
 
 class CreditoRead(CreditoBase):
     id_cred: int
-    fecha_inicio: date
+    fecha_inicio: Optional[date] = None
 
 class CreditoUpdate(SQLModel):
     prestamo: Optional[float] = None
