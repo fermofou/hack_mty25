@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "../components/ui/card";
 import TransactionList from "@/components/TransactionList";
+import { Button } from "@/components/Button";
 import PreapprovedCreditCard from "@/components/PreapprovedCreditCard";
 import {
   type CreditOffer,
