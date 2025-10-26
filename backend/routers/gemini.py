@@ -83,13 +83,24 @@ async def process_message(
     # Determine message type
     response_type_data = determine_response_type(request.last_message)
     if response_type_data["response_type"] == "credit":
-        # Search for related products
+        # Load products from productList.json and filter by query
+        import json
+        import os
         product_query = response_type_data["object_in_response"]
-        products = search_products(product_query)
+        backend_dir = os.path.dirname(os.path.abspath(__file__))
+        product_list_path = os.path.join(backend_dir, "../productList.json")
+        with open(product_list_path, "r", encoding="utf-8") as f:
+            all_products = json.load(f)
+        # Instead of filtering, just use all products
+        products = all_products
+        # Debug: print the product query and all product names for troubleshooting
+        print(f"product_query: {product_query}")
+        print(f"all product names: {[p.get('nombre', '') for p in all_products]}")
+        print(f"all product categories: {[p.get('categoria', '') for p in all_products]}")
+        print(f"filtered products: {products}")
+        print("these were the products: ", products)
         conv_context = await get_conversation_context(request, session, products)
-        # This is the function where it takes the most time to run.
         offers = create_credit_offers(conv_context)
-
         return {
             "response_type": "credit",
             "object_in_response": product_query,
