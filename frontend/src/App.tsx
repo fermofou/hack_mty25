@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthProvider';
 import LoginPage from './pages/LoginPage';
 import LoginPageAdmin from './pages/LoginPageAdmin';
@@ -14,6 +15,7 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+  <Toaster position="top-left" />
         <Routes>
           <Route path='/' element={<LoginPage />} />
           <Route path='/admin' element={<LoginPageAdmin />} />

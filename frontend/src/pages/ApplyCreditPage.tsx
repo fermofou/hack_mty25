@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { toast } from "react-hot-toast";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { UserTopBar } from "@/components/UserTopBar";
@@ -7,7 +8,8 @@ import { Input } from "@/components/Input";
 import { Card, CardContent } from "@/components/ui/card";
 import { CreditOfferCard } from "@/components/CreditOfferCard";
 import { CreditOfferModal } from "@/components/CreditOfferModal";
-import { Send, Bot, User } from "lucide-react";
+import { Send, Bot, User, ChevronLeft } from "lucide-react";
+import { Link } from 'react-router';
 
 type Message =
   | { role: "assistant" | "user"; content: string }
@@ -101,10 +103,18 @@ export default function ApplyCreditPage() {
       <UserTopBar />
 
       <main className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Title section - removed back button */}
+        {/* Title section with back button */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Solicitar crédito</h1>
-          <p className="text-muted-foreground">Completa la información con nuestro asistente virtual</p>
+          <div className="flex items-center gap-3 mb-2">
+            <Link
+              to="/user/credits"
+              className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <ChevronLeft className="h-7 w-7 text-[#EB0029]" />
+            </Link>
+            <h1 className="text-3xl font-bold text-foreground">Solicitar crédito</h1>
+          </div>
+          <p className="text-muted-foreground ml-13">Completa la información con nuestro asistente virtual</p>
         </div>
 
         {/* Chat interface */}
@@ -119,7 +129,14 @@ export default function ApplyCreditPage() {
                         key={idx}
                         offer={offer}
                         onClick={() => setSelectedOffer(offer)}
+                      />
+                    ))}
+                    {selectedOffer && (
+                      <CreditOfferModal
+                        offer={selectedOffer}
+                        onClose={() => setSelectedOffer(null)}
                         onRequestCredit={async () => {
+                          const offer = selectedOffer;
                           // 1. Create item
                           const itemPayload = {
                             nombre: offer.product.nombre,
@@ -133,7 +150,7 @@ export default function ApplyCreditPage() {
                             const itemRes = await api.post("/items/", itemPayload);
                             itemId = itemRes.data.id;
                           } catch (e) {
-                            alert("Error creando el producto (item)");
+                            toast.error("Error creando el producto (item)");
                             return;
                           }
                           // 2. Create credito
@@ -154,15 +171,12 @@ export default function ApplyCreditPage() {
                           };
                           try {
                             await api.post("/creditos/", creditoPayload);
-                            alert("¡Crédito solicitado exitosamente!");
+                            toast.success("¡Crédito solicitado exitosamente!");
                           } catch (e) {
-                            alert("Error solicitando el crédito");
+                            toast.error("Error solicitando el crédito");
                           }
                         }}
                       />
-                    ))}
-                    {selectedOffer && (
-                      <CreditOfferModal offer={selectedOffer} onClose={() => setSelectedOffer(null)} />
                     )}
                   </div>
                 );

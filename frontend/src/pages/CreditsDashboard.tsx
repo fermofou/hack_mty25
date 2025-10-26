@@ -8,17 +8,49 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import PreapprovedCreditCard from '@/components/PreapprovedCreditCard';
 import { SavingsChart } from '../components/SavingsChart';
-import {
-  mockCredits,
-  mockSustainabilitySavings,
-  mockSavingsTimeline,
-  categorySavingsData,
-} from '@/lib/mock-data';
+import { mockCredits, mockSustainabilitySavings } from '@/lib/mock-data';
 import { Leaf, Clock, DollarSign, TrendingUp, CreditCard } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { api } from '@/lib/api';
+
+export interface MonthlyStats {
+  average_monthly_expenses: Record<
+    string,
+    {
+      monthly_expenses: Array<{
+        month: string;
+        amount: number;
+      }>;
+      average: number;
+      total: number;
+    }
+  >;
+  current_monthly_savings: {
+    money: number;
+    co2: number;
+    liters: number;
+  };
+}
 
 export default function CreditsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  const [monthlyStats, setMonthlyStats] = useState<MonthlyStats | undefined>();
+
+  useEffect(() => {
+    const fetchMontlyStats = async () => {
+      if (!user) return;
+      try {
+        const { data } = await api.get(`/clientes/${user.id}/monthly_stats`);
+        console.log(data);
+        setMonthlyStats(data);
+      } catch (err: unknown) {
+        console.log(err);
+      }
+    };
+    fetchMontlyStats();
+  }, [user]);
 
   if (!user) {
     return null;
@@ -280,8 +312,7 @@ export default function CreditsPage() {
                 {/* Savings Chart - Moved to top */}
                 <div className='w-full'>
                   <SavingsChart
-                    data={mockSavingsTimeline}
-                    categoryData={categorySavingsData}
+                    rawData={monthlyStats?.average_monthly_expenses ?? {}}
                     className='bg-white rounded-lg border border-gray-200 shadow-sm p-4'
                   />
                 </div>
@@ -296,10 +327,17 @@ export default function CreditsPage() {
                     </CardHeader>
                     <CardContent>
                       <div className='text-2xl font-bold text-[#EB0029]'>
-                        ${totalMonthlySavings.toLocaleString('es-MX')}
+                        $
+                        {(
+                          monthlyStats?.current_monthly_savings?.money ?? 0
+                        ).toLocaleString('es-MX')}
                       </div>
                       <p className='text-xs text-muted-foreground mt-1'>
-                        ${totalYearlySavings.toLocaleString('es-MX')} al año
+                        $
+                        {(
+                          monthlyStats?.current_monthly_savings?.money ?? 0 * 12
+                        ).toLocaleString('es-MX')}{' '}
+                        al año
                       </p>
                     </CardContent>
                   </Card>
@@ -312,7 +350,10 @@ export default function CreditsPage() {
                     </CardHeader>
                     <CardContent>
                       <div className='text-2xl font-bold text-[#EB0029]'>
-                        {(totalCO2Reduction / 1000).toFixed(1)} ton
+                        {(
+                          monthlyStats?.current_monthly_savings?.co2 ?? 0 / 1000
+                        ).toFixed(1)}{' '}
+                        ton
                       </div>
                       <p className='text-xs text-muted-foreground mt-1'>
                         Por año
@@ -329,7 +370,7 @@ export default function CreditsPage() {
                     </CardHeader>
                     <CardContent>
                       <div className='text-2xl font-bold text-[#EB0029]'>
-                        2,450 L
+                        {monthlyStats?.current_monthly_savings?.liters ?? 0} L
                       </div>
                       <p className='text-xs text-muted-foreground mt-1'>
                         Por mes
