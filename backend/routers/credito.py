@@ -132,7 +132,7 @@ async def get_all_creditos_with_client_info(
     session: AsyncSession = Depends(get_session)
 ):
     """
-    Obtiene todos los créditos con información del cliente (nombre, apellido, credit_score).
+    Obtiene todos los créditos con información del cmeliente (nombre, apellido, credit_score).
     Hace JOIN entre la tabla creditos y clientes usando cliente_id.
     """
     # Query con JOIN entre Credito y Cliente, ordenado por fecha_inicio descendente
@@ -236,3 +236,4 @@ async def generate_preapproved_credit() -> CreditOffers:
 
     These offers only use one of previously defined products in the database, such as solar panels or electric cars.
     """
+    
