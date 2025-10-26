@@ -10,6 +10,7 @@ from models.gemini import ChatMessageResponse, GeminiRequest
 # Import from gemini module
 from gemini.chatUtils import create_credit_offers, determine_response_type
 from gemini.baseGeminiQueries import gemini_basic_response
+import os
 
 # Import from .products
 from .products import search_products
@@ -72,33 +73,25 @@ async def get_conversation_context_endpoint(
     return await get_conversation_context(request, session)
 
 
+
 async def process_message(
-    request: GeminiRequest, session: AsyncSession
+    request: GeminiRequest, session: AsyncSession, gemini_api_key=None
 ) -> ChatMessageResponse:
     """
     Processes a user message by determining its type and responding appropriately.
     If type is 'text', returns a Gemini response.
     If type is 'credit', searches for related products and returns the first 3.
+    Accepts an optional gemini_api_key to use for Gemini API calls.
     """
-    # Determine message type
     response_type_data = determine_response_type(request.last_message)
     if response_type_data["response_type"] == "credit":
-        # Load products from productList.json and filter by query
         import json
-        import os
         product_query = response_type_data["object_in_response"]
         backend_dir = os.path.dirname(os.path.abspath(__file__))
         product_list_path = os.path.join(backend_dir, "../productList.json")
         with open(product_list_path, "r", encoding="utf-8") as f:
             all_products = json.load(f)
-        # Instead of filtering, just use all products
         products = all_products
-        # Debug: print the product query and all product names for troubleshooting
-        print(f"product_query: {product_query}")
-        print(f"all product names: {[p.get('nombre', '') for p in all_products]}")
-        print(f"all product categories: {[p.get('categoria', '') for p in all_products]}")
-        print(f"filtered products: {products}")
-        print("these were the products: ", products)
         conv_context = await get_conversation_context(request, session, products)
         offers = create_credit_offers(conv_context)
         return {
@@ -106,7 +99,7 @@ async def process_message(
             "object_in_response": product_query,
             "creditOffers": offers,
         }
-    else:  # response_type == "text" or any other
+    else:
         context = """
         CONTEXT:
         You are an expert environmental and sustainable finance assistant. Your role is to provide accurate, helpful information about:
@@ -127,8 +120,19 @@ async def process_message(
         ------
         USER MESSAGE:
         """
-        gemini_response = gemini_basic_response(context + request.last_message)
+        # Pass the API key to gemini_basic_response if supported, else set it globally
+        if gemini_api_key:
+            # Try to pass the key if the function supports it
+            try:
+                gemini_response = gemini_basic_response(context + request.last_message, api_key=gemini_api_key)
+            except TypeError:
+                # Fallback: set env var for the API key
+                os.environ["GEMINI_API_KEY"] = gemini_api_key
+                gemini_response = gemini_basic_response(context + request.last_message)
+        else:
+            gemini_response = gemini_basic_response(context + request.last_message)
         return {"response_type": "text", "text_response": gemini_response}
+
 
 
 @router.post("/process")
@@ -137,8 +141,32 @@ async def process_message_endpoint(
 ):
     """
     Endpoint that receives a user message and:
-    - Determines if it's a general inquiry (text) or about credits for green products (credit)
-    - If 'text': returns a Gemini response
-    - If 'credit': searches for related products and returns the first 3
+    - Tries all available Gemini API keys in order until one succeeds (does not return error)
+    - If all fail, returns an error
     """
-    return await process_message(request, session)
+    # Gather all GEMINI_API_KEYs from environment
+    keys = [
+        os.getenv("GEMINI_API_KEY"),
+        os.getenv("GEMINI_API_KEY_2"),
+        os.getenv("GEMINI_API_KEY_3"),
+        os.getenv("GEMINI_API_KEY_4"),
+    ]
+    keys = [k for k in keys if k]
+    last_error = None
+    for key in keys:
+        try:
+            response = await process_message(request, session, gemini_api_key=key)
+            # Check for error in response (customize this check as needed)
+            if (
+                isinstance(response, dict)
+                and ("error" in response or "Error" in response)
+            ):
+                last_error = response
+                continue
+            # If response looks valid, return it
+            return response
+        except Exception as e:
+            last_error = {"error": str(e)}
+            continue
+    # If all keys fail
+    return last_error or {"error": "All Gemini API keys failed."}

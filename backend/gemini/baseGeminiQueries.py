@@ -10,12 +10,8 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Configure Gemini API
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY not found in environment variables")
 
-genai.configure(api_key=GEMINI_API_KEY)
+# Remove global configuration. API key will be set per request.
 
 
 # Pydantic models for structured output
@@ -39,7 +35,7 @@ class ProductRecommendation(BaseModel):
 
 
 def gemini_basic_response(
-    prompt: str, model_name: str = "gemini-2.5-flash-lite"
+    prompt: str, model_name: str = "gemini-2.5-flash-lite", api_key: str = None
 ) -> str:
     """
     Basic Gemini API function that returns a simple text response.
@@ -57,6 +53,12 @@ def gemini_basic_response(
         "The capital of France is Paris."
     """
     try:
+        # Configure Gemini API with the provided key, or fallback to env var
+        key = api_key or os.getenv("GEMINI_API_KEY")
+        if not key:
+            raise ValueError("GEMINI_API_KEY not found in environment variables or as argument")
+        genai.configure(api_key=key)
+
         # Initialize the model
         model = genai.GenerativeModel(model_name)
 
@@ -71,7 +73,7 @@ def gemini_basic_response(
 
 
 def gemini_structured_response(
-    prompt: str, response_schema: BaseModel, model_name: str = "gemini-2.5-flash-lite"
+    prompt: str, response_schema: BaseModel, model_name: str = "gemini-2.5-flash-lite", api_key: str = None
 ) -> dict:
     """
     Gemini API function that returns structured output based on a Pydantic schema.
@@ -96,6 +98,12 @@ def gemini_structured_response(
         }
     """
     try:
+        # Configure Gemini API with the provided key, or fallback to env var
+        key = api_key or os.getenv("GEMINI_API_KEY")
+        if not key:
+            raise ValueError("GEMINI_API_KEY not found in environment variables or as argument")
+        genai.configure(api_key=key)
+
         # Initialize the model with structured output configuration
         model = genai.GenerativeModel(
             model_name,
