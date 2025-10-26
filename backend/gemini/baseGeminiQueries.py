@@ -38,13 +38,15 @@ class ProductRecommendation(BaseModel):
     recommended: bool
 
 
-def gemini_basic_response(prompt: str, model_name: str = "gemini-2.5-flash") -> str:
+def gemini_basic_response(
+    prompt: str, model_name: str = "gemini-2.5-flash-lite"
+) -> str:
     """
     Basic Gemini API function that returns a simple text response.
 
     Args:
         prompt (str): The user's message/prompt
-        model_name (str): The Gemini model to use (default: gemini-2.5-flash)
+        model_name (str): The Gemini model to use (default: gemini-2.5-flash-lite)
 
     Returns:
         str: The AI's response as plain text
@@ -69,7 +71,7 @@ def gemini_basic_response(prompt: str, model_name: str = "gemini-2.5-flash") -> 
 
 
 def gemini_structured_response(
-    prompt: str, response_schema: BaseModel, model_name: str = "gemini-2.5-flash"
+    prompt: str, response_schema: BaseModel, model_name: str = "gemini-2.5-flash-lite"
 ) -> dict:
     """
     Gemini API function that returns structured output based on a Pydantic schema.
@@ -77,7 +79,7 @@ def gemini_structured_response(
     Args:
         prompt (str): The user's message/prompt
         response_schema (BaseModel): Pydantic model defining the expected response structure
-        model_name (str): The Gemini model to use (default: gemini-2.5-flash)
+        model_name (str): The Gemini model to use (default: gemini-2.5-flash-lite)
 
     Returns:
         dict: Structured response matching the provided schema
