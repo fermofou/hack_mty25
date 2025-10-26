@@ -24,7 +24,7 @@ import {
   Download,
 } from "lucide-react";
 import { api } from "@/lib/api";
-import type { Credito } from "@/lib/types";
+import type { CreditoConNombreCliente } from "@/lib/types";
 
 // Function to convert SVG to base64 for embedding
 const getSvgAsBase64 = async (svgPath: string): Promise<string> => {
@@ -41,9 +41,10 @@ const getSvgAsBase64 = async (svgPath: string): Promise<string> => {
 export default function AdminCredits() {
   const navigate = useNavigate();
   const { admin } = useAuth();
-  const [creditos, setCreditos] = useState<Credito[]>([]);
+  const [creditos, setCreditos] = useState<CreditoConNombreCliente[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCredit, setSelectedCredit] = useState<Credito | null>(null);
+  const [selectedCredit, setSelectedCredit] =
+    useState<CreditoConNombreCliente | null>(null);
   const [showContract, setShowContract] = useState(false);
   const [banorteLogo, setBanorteLogo] = useState<string>("");
 
@@ -63,14 +64,14 @@ export default function AdminCredits() {
   useEffect(() => {
     // Fetch creditos from API
     api
-      .get("/creditos")
+      .get("/creditos/todos")
       .then((res) => {
-        const data_creditos: Credito[] = res.data;
+        const data_creditos: CreditoConNombreCliente[] = res.data;
         console.log("Creditos fetched:", data_creditos);
         const sorted = data_creditos.sort(
-          (a: Credito, b: Credito) =>
-            new Date(b.fecha_inicio).getTime() -
-            new Date(a.fecha_inicio).getTime()
+          (a: CreditoConNombreCliente, b: CreditoConNombreCliente) =>
+            new Date(b.credito.fecha_inicio).getTime() -
+            new Date(a.credito.fecha_inicio).getTime()
         );
         setCreditos(sorted);
         setLoading(false);
@@ -92,13 +93,20 @@ export default function AdminCredits() {
   }
 
   // Calculate pending credits
-  const pendingCredits = creditos.filter((c) => c.estado === "PENDIENTE");
+  const pendingCredits = creditos.filter(
+    (c) => c.credito.estado === "PENDIENTE"
+  );
 
   const handleApprove = async (creditId: number) => {
     // TODO: Add API call to approve credit
     setCreditos((prev) =>
       prev.map((c) =>
-        c.id_cred === creditId ? { ...c, estado: "ACEPTADO" as const } : c
+        c.credito.id_cred === creditId
+          ? {
+              ...c,
+              credito: { ...c.credito, estado: "ACEPTADO" as const },
+            }
+          : c
       )
     );
     setSelectedCredit(null);
@@ -108,7 +116,12 @@ export default function AdminCredits() {
     // TODO: Add API call to reject credit
     setCreditos((prev) =>
       prev.map((c) =>
-        c.id_cred === creditId ? { ...c, estado: "RECHAZADO" as const } : c
+        c.credito.id_cred === creditId
+          ? {
+              ...c,
+              credito: { ...c.credito, estado: "RECHAZADO" as const },
+            }
+          : c
       )
     );
     setSelectedCredit(null);
@@ -160,7 +173,7 @@ export default function AdminCredits() {
               error
             );
             // Fallback to HTML download
-            downloadAsHTML(contractHTML, selectedCredit.id_cred);
+            downloadAsHTML(contractHTML, selectedCredit.credito.id_cred);
           }
           document.body.removeChild(iframe);
         }, 1000);
@@ -169,7 +182,7 @@ export default function AdminCredits() {
       console.error("Error generating contract:", error);
       // Fallback to simple HTML generation
       const contractHTML = await generateContractHTML(selectedCredit);
-      downloadAsHTML(contractHTML, selectedCredit.id_cred);
+      downloadAsHTML(contractHTML, selectedCredit.credito.id_cred);
     }
   };
 
@@ -185,7 +198,12 @@ export default function AdminCredits() {
     URL.revokeObjectURL(url);
   };
 
-  const generateContractHTML = async (credit: Credito): Promise<string> => {
+  const generateContractHTML = async (
+    creditoConCliente: CreditoConNombreCliente
+  ): Promise<string> => {
+    const credit = creditoConCliente.credito;
+    const clienteNombre = `${creditoConCliente.cliente_nombre} ${creditoConCliente.cliente_apellido}`;
+
     const monthlyPayment = calculateMonthlyPayment(
       credit.prestamo,
       credit.interes,
@@ -317,11 +335,17 @@ export default function AdminCredits() {
           <div class="section-title">INFORMACIÓN DEL CLIENTE</div>
           <div class="field">
             <div class="field-label">Nombre:</div>
-            <div class="field-value">Cliente ${credit.cliente_id}</div>
+            <div class="field-value">${clienteNombre}</div>
           </div>
           <div class="field">
             <div class="field-label">ID Cliente:</div>
             <div class="field-value">${credit.cliente_id}</div>
+          </div>
+          <div class="field">
+            <div class="field-label">Credit Score:</div>
+            <div class="field-value">${creditoConCliente.cliente_credit_score.toFixed(
+              0
+            )}</div>
           </div>
           <div class="field">
             <div class="field-label">Fecha de Contrato:</div>
@@ -404,9 +428,7 @@ export default function AdminCredits() {
           <div class="signature-box">
             <div class="signature-line"></div>
             <div>Firma del Cliente</div>
-            <div style="font-size: 12px; color: #666;">Cliente ${
-              credit.cliente_id
-            }</div>
+            <div style="font-size: 12px; color: #666;">${clienteNombre}</div>
           </div>
           <div class="signature-box">
             <div class="signature-line"></div>
@@ -469,7 +491,7 @@ export default function AdminCredits() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {pendingCredits.map((credit) => (
               <Card
-                key={credit.id_cred}
+                key={credit.credito.id_cred}
                 className="cursor-pointer transition-all hover:shadow-lg hover:border-[#EB0029]"
                 onClick={() => setSelectedCredit(credit)}
               >
@@ -480,18 +502,18 @@ export default function AdminCredits() {
                         Pendiente
                       </Badge>
                       <span className="text-xs text-muted-foreground">
-                        {new Date(credit.fecha_inicio).toLocaleDateString(
-                          "es-MX"
-                        )}
+                        {new Date(
+                          credit.credito.fecha_inicio
+                        ).toLocaleDateString("es-MX")}
                       </span>
                     </div>
 
                     <div>
                       <p className="text-2xl font-bold text-foreground">
-                        ${credit.prestamo.toLocaleString("es-MX")}
+                        ${credit.credito.prestamo.toLocaleString("es-MX")}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {credit.descripcion}
+                        {credit.credito.descripcion}
                       </p>
                     </div>
 
@@ -499,19 +521,39 @@ export default function AdminCredits() {
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
                         <span className="text-muted-foreground">Cliente:</span>
-                        <span className="font-medium">{credit.cliente_id}</span>
+                        <span className="font-medium">
+                          {credit.cliente_nombre} {credit.cliente_apellido}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">
+                          Credit Score:
+                        </span>
+                        <span
+                          className={`font-bold ${
+                            credit.cliente_credit_score >= 0.85
+                              ? "text-green-600"
+                              : credit.cliente_credit_score >= 0.65
+                              ? "text-yellow-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {credit.cliente_credit_score}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-muted-foreground" />
                         <span className="text-muted-foreground">Plazo:</span>
                         <span className="font-medium">
-                          {credit.meses_originales} meses
+                          {credit.credito.meses_originales} meses
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Percent className="h-4 w-4 text-muted-foreground" />
                         <span className="text-muted-foreground">Interés:</span>
-                        <span className="font-medium">{credit.interes}%</span>
+                        <span className="font-medium">
+                          {credit.credito.interes}%
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -541,10 +583,40 @@ export default function AdminCredits() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">
+                          Nombre Completo:
+                        </span>
+                        <span className="font-medium">
+                          {selectedCredit.cliente_nombre}{" "}
+                          {selectedCredit.cliente_apellido}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">
                           ID Cliente:
                         </span>
                         <span className="font-medium">
-                          {selectedCredit.cliente_id}
+                          {selectedCredit.credito.cliente_id}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">
+                          Credit Score:
+                        </span>
+                        <span
+                          className={`font-bold ${
+                            selectedCredit.cliente_credit_score >= 0.85
+                              ? "text-green-600"
+                              : selectedCredit.cliente_credit_score >= 0.64
+                              ? "text-yellow-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {selectedCredit.cliente_credit_score}
+                          {selectedCredit.cliente_credit_score >= 0.85
+                            ? " (Excelente)"
+                            : selectedCredit.cliente_credit_score > 0.64
+                            ? " (Bueno)"
+                            : " (Riesgo)"}
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -553,7 +625,7 @@ export default function AdminCredits() {
                         </span>
                         <span className="font-medium">
                           {new Date(
-                            selectedCredit.fecha_inicio
+                            selectedCredit.credito.fecha_inicio
                           ).toLocaleDateString("es-MX")}
                         </span>
                       </div>
@@ -573,7 +645,10 @@ export default function AdminCredits() {
                             Monto solicitado
                           </p>
                           <p className="font-semibold text-lg">
-                            ${selectedCredit.prestamo.toLocaleString("es-MX")}
+                            $
+                            {selectedCredit.credito.prestamo.toLocaleString(
+                              "es-MX"
+                            )}
                           </p>
                         </div>
                       </div>
@@ -583,7 +658,7 @@ export default function AdminCredits() {
                         <div className="flex-1">
                           <p className="text-sm text-muted-foreground">Plazo</p>
                           <p className="font-semibold">
-                            {selectedCredit.meses_originales} meses
+                            {selectedCredit.credito.meses_originales} meses
                           </p>
                         </div>
                       </div>
@@ -595,7 +670,7 @@ export default function AdminCredits() {
                             Tasa de interés
                           </p>
                           <p className="font-semibold">
-                            {selectedCredit.interes}% anual
+                            {selectedCredit.credito.interes}% anual
                           </p>
                         </div>
                       </div>
@@ -605,7 +680,7 @@ export default function AdminCredits() {
                           Categoría:
                         </p>
                         <p className="text-sm font-medium">
-                          {selectedCredit.categoria}
+                          {selectedCredit.credito.categoria}
                         </p>
                       </div>
 
@@ -614,7 +689,7 @@ export default function AdminCredits() {
                           Descripción:
                         </p>
                         <p className="text-sm font-medium">
-                          {selectedCredit.descripcion}
+                          {selectedCredit.credito.descripcion}
                         </p>
                       </div>
                     </div>
@@ -633,9 +708,9 @@ export default function AdminCredits() {
                         <span className="font-semibold">
                           $
                           {calculateMonthlyPayment(
-                            selectedCredit.prestamo,
-                            selectedCredit.interes,
-                            selectedCredit.meses_originales
+                            selectedCredit.credito.prestamo,
+                            selectedCredit.credito.interes,
+                            selectedCredit.credito.meses_originales
                           ).toLocaleString("es-MX", {
                             minimumFractionDigits: 2,
                           })}
@@ -648,8 +723,8 @@ export default function AdminCredits() {
                         <span className="font-semibold text-[#6CC04A]">
                           $
                           {(
-                            selectedCredit.gasto_inicial_mes -
-                            selectedCredit.gasto_final_mes
+                            selectedCredit.credito.gasto_inicial_mes -
+                            selectedCredit.credito.gasto_final_mes
                           ).toLocaleString("es-MX", {
                             minimumFractionDigits: 2,
                           })}
@@ -672,7 +747,9 @@ export default function AdminCredits() {
                       <BanorteButton
                         variant="primary"
                         className="flex-1 bg-[#6CC04A] hover:bg-[#5CB03A]"
-                        onClick={() => handleApprove(selectedCredit.id_cred)}
+                        onClick={() =>
+                          handleApprove(selectedCredit.credito.id_cred)
+                        }
                       >
                         <Check className="mr-2 h-4 w-4" />
                         Aprobar
@@ -680,7 +757,9 @@ export default function AdminCredits() {
                       <BanorteButton
                         variant="secondary"
                         className="flex-1 border-destructive text-destructive hover:bg-destructive hover:text-white"
-                        onClick={() => handleReject(selectedCredit.id_cred)}
+                        onClick={() =>
+                          handleReject(selectedCredit.credito.id_cred)
+                        }
                       >
                         <X className="mr-2 h-4 w-4" />
                         Rechazar
@@ -739,13 +818,32 @@ export default function AdminCredits() {
                     <div className="space-y-2">
                       <div className="flex">
                         <span className="font-bold min-w-[200px]">Nombre:</span>
-                        <span>Cliente {selectedCredit.cliente_id}</span>
+                        <span>
+                          {selectedCredit.cliente_nombre}{" "}
+                          {selectedCredit.cliente_apellido}
+                        </span>
                       </div>
                       <div className="flex">
                         <span className="font-bold min-w-[200px]">
                           ID Cliente:
                         </span>
-                        <span>{selectedCredit.cliente_id}</span>
+                        <span>{selectedCredit.credito.cliente_id}</span>
+                      </div>
+                      <div className="flex">
+                        <span className="font-bold min-w-[200px]">
+                          Credit Score:
+                        </span>
+                        <span
+                          className={`font-bold ${
+                            selectedCredit.cliente_credit_score >= 0.85
+                              ? "text-green-600"
+                              : selectedCredit.cliente_credit_score >= 0.64
+                              ? "text-yellow-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {selectedCredit.cliente_credit_score}
+                        </span>
                       </div>
                       <div className="flex">
                         <span className="font-bold min-w-[200px]">
@@ -753,7 +851,7 @@ export default function AdminCredits() {
                         </span>
                         <span>
                           {new Date(
-                            selectedCredit.fecha_inicio
+                            selectedCredit.credito.fecha_inicio
                           ).toLocaleDateString("es-MX", {
                             year: "numeric",
                             month: "long",
@@ -776,9 +874,12 @@ export default function AdminCredits() {
                         </span>
                         <span>
                           $
-                          {selectedCredit.prestamo.toLocaleString("es-MX", {
-                            minimumFractionDigits: 2,
-                          })}{" "}
+                          {selectedCredit.credito.prestamo.toLocaleString(
+                            "es-MX",
+                            {
+                              minimumFractionDigits: 2,
+                            }
+                          )}{" "}
                           MXN
                         </span>
                       </div>
@@ -786,11 +887,13 @@ export default function AdminCredits() {
                         <span className="font-bold min-w-[200px]">
                           Tasa de Interés Anual:
                         </span>
-                        <span>{selectedCredit.interes}%</span>
+                        <span>{selectedCredit.credito.interes}%</span>
                       </div>
                       <div className="flex">
                         <span className="font-bold min-w-[200px]">Plazo:</span>
-                        <span>{selectedCredit.meses_originales} meses</span>
+                        <span>
+                          {selectedCredit.credito.meses_originales} meses
+                        </span>
                       </div>
                       <div className="flex">
                         <span className="font-bold min-w-[200px]">
@@ -799,9 +902,9 @@ export default function AdminCredits() {
                         <span>
                           $
                           {calculateMonthlyPayment(
-                            selectedCredit.prestamo,
-                            selectedCredit.interes,
-                            selectedCredit.meses_originales
+                            selectedCredit.credito.prestamo,
+                            selectedCredit.credito.interes,
+                            selectedCredit.credito.meses_originales
                           ).toLocaleString("es-MX", {
                             minimumFractionDigits: 2,
                           })}{" "}
@@ -812,13 +915,13 @@ export default function AdminCredits() {
                         <span className="font-bold min-w-[200px]">
                           Categoría:
                         </span>
-                        <span>{selectedCredit.categoria}</span>
+                        <span>{selectedCredit.credito.categoria}</span>
                       </div>
                       <div className="flex">
                         <span className="font-bold min-w-[200px]">
                           Descripción:
                         </span>
-                        <span>{selectedCredit.descripcion}</span>
+                        <span>{selectedCredit.credito.descripcion}</span>
                       </div>
                     </div>
                   </div>
@@ -835,7 +938,7 @@ export default function AdminCredits() {
                         </span>
                         <span>
                           $
-                          {selectedCredit.gasto_inicial_mes.toLocaleString(
+                          {selectedCredit.credito.gasto_inicial_mes.toLocaleString(
                             "es-MX",
                             {
                               minimumFractionDigits: 2,
@@ -850,7 +953,7 @@ export default function AdminCredits() {
                         </span>
                         <span>
                           $
-                          {selectedCredit.gasto_final_mes.toLocaleString(
+                          {selectedCredit.credito.gasto_final_mes.toLocaleString(
                             "es-MX",
                             { minimumFractionDigits: 2 }
                           )}{" "}
@@ -864,8 +967,8 @@ export default function AdminCredits() {
                         <span className="text-[#6CC04A] font-semibold">
                           $
                           {(
-                            selectedCredit.gasto_inicial_mes -
-                            selectedCredit.gasto_final_mes
+                            selectedCredit.credito.gasto_inicial_mes -
+                            selectedCredit.credito.gasto_final_mes
                           ).toLocaleString("es-MX", {
                             minimumFractionDigits: 2,
                           })}{" "}
@@ -893,7 +996,8 @@ export default function AdminCredits() {
                       <div className="border-t-2 border-black w-48 mb-2 mt-12"></div>
                       <div className="font-semibold">Firma del Cliente</div>
                       <div className="text-sm text-gray-600">
-                        Cliente {selectedCredit.cliente_id}
+                        {selectedCredit.cliente_nombre}{" "}
+                        {selectedCredit.cliente_apellido}
                       </div>
                     </div>
                     <div className="text-center">
