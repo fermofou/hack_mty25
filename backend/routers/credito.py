@@ -263,10 +263,7 @@ async def generate_preapproved_credit(
 
     # Determine how many new offers to generate
     if num_existing >= 2:
-        raise HTTPException(
-            status_code=400,
-            detail="User already has 2 or more pre-approved credit offers. Cannot generate more.",
-        )
+        return CreditOffers(creditOffers=[])
     elif num_existing == 1:
         num_offers_to_generate = 1
     else:  # num_existing == 0
@@ -353,8 +350,11 @@ async def get_preapproved_credit_endpoint(
     # Generate new pre-approved credits (this handles the business logic)
     credit_offers_dict = await generate_preapproved_credit(cliente_id, session)
 
-    # Convert dict to CreditOffers object
-    credit_offers = CreditOffers(**credit_offers_dict)
+    # Convert dict to CreditOffers object only if needed
+    if not isinstance(credit_offers_dict, CreditOffers):
+        credit_offers = CreditOffers(**credit_offers_dict)
+    else:
+        credit_offers = credit_offers_dict
 
     # Store each generated offer in the database
     for offer in credit_offers.creditOffers:
