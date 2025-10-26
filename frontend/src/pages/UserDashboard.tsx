@@ -12,29 +12,11 @@ import {
 } from "../components/ui/card";
 import TransactionList from "@/components/TransactionList";
 import PreapprovedCreditCard from "@/components/PreapprovedCreditCard";
-import { api } from "@/lib/api";
-
-interface ProductData {
-  nombre: string;
-  link: string;
-  img_link: string;
-  precio: number;
-  categoria: string;
-}
-
-interface CreditOffer {
-  prestamo: number;
-  interes: number;
-  meses_originales: number;
-  descripcion: string;
-  gasto_inicial_mes: number;
-  gasto_final_mes: number;
-  product: ProductData;
-}
-
-interface PreapprovedCreditsResponse {
-  creditOffers: CreditOffer[];
-}
+import {
+  type CreditOffer,
+  fetchPreapprovedCredits,
+  transformCreditOffer,
+} from "@/lib/creditOfferUtils";
 
 export default function UserDashboard() {
   const navigate = useNavigate();
@@ -46,65 +28,17 @@ export default function UserDashboard() {
 
   // Fetch preapproved credits
   useEffect(() => {
-    const fetchPreapprovedCredits = async () => {
+    const loadPreapprovedCredits = async () => {
       if (!user?.id) return;
 
       setLoadingCredits(true);
-
-      try {
-        const response = await api.post<PreapprovedCreditsResponse>(
-          `/creditos/preapproved/${user.id}`
-        );
-        setPreapprovedCredits(response.data.creditOffers || []);
-      } catch (error) {
-        console.error("Error fetching preapproved credits:", error);
-        // Silently fail - user will just not see preapproved credits
-      } finally {
-        setLoadingCredits(false);
-      }
+      const credits = await fetchPreapprovedCredits(user.id);
+      setPreapprovedCredits(credits);
+      setLoadingCredits(false);
     };
 
-    fetchPreapprovedCredits();
+    loadPreapprovedCredits();
   }, [user?.id]);
-
-  // Transform API credit offer to component format
-  const transformCreditOffer = (apiOffer: CreditOffer) => {
-    const monthlyPayment =
-      (apiOffer.prestamo * (1 + apiOffer.interes / 100)) /
-      apiOffer.meses_originales;
-    const savings = apiOffer.gasto_inicial_mes - apiOffer.gasto_final_mes;
-    const savingsPercentage =
-      apiOffer.gasto_inicial_mes > 0
-        ? Math.round((savings / apiOffer.gasto_inicial_mes) * 100)
-        : 0;
-
-    return {
-      title: apiOffer.product?.nombre || apiOffer.descripcion.split(".")[0],
-      subtitle: apiOffer.product?.nombre || "Producto",
-      description: apiOffer.descripcion.split(".").slice(0, 2).join("."),
-      detailedDescription: apiOffer.descripcion,
-      maxAmountText: `Hasta $${apiOffer.prestamo.toLocaleString("es-MX", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })} MXN`,
-      savingsPercentage: savingsPercentage,
-      termMonths: apiOffer.meses_originales,
-      creditDetails: {
-        amount: apiOffer.prestamo,
-        interestRate: apiOffer.interes,
-        maxTermMonths: apiOffer.meses_originales,
-        monthlyPayment: monthlyPayment,
-      },
-      benefits: [
-        "Sin comisión por apertura",
-        "Instalación incluida",
-        "Garantía 25 años",
-      ],
-      disclaimerText: `*Ahorro estimado basado en la reducción de ${
-        apiOffer.gasto_inicial_mes > 0 ? `$${savings.toFixed(2)}` : "costos"
-      } mensuales.`,
-    };
-  };
 
   useEffect(() => {
     if (user === null) {
