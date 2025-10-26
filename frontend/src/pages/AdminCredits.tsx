@@ -188,7 +188,7 @@ export default function AdminCredits() {
       creditId,
       typeof creditId
     );
-    return updateCreditStatus(creditId, "ACEPTADO");
+    return updateCreditStatus(creditId, "APROBADO");
   };
 
   // --- Render ---
