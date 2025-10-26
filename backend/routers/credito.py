@@ -84,6 +84,19 @@ async def pagar_credito(
         .values(pagado=credito.pagado + pago.monto)
     )
     print("10")
+
+
+    # Crear transacción de pago con fecha actual
+    from datetime import datetime
+    nueva_transaccion = Transaccion(
+        cliente_id=pago.cliente_id,
+        monto=pago.monto,
+        categoria="Credito Verde",
+        descripcion=f"Pago realizado al crédito #{pago.credito_id}",
+        fecha=datetime.utcnow(),
+    )
+    session.add(nueva_transaccion)
+
     await session.commit()
     print("11")
     # Refrescar desde base de datos
@@ -528,8 +541,21 @@ async def save_preapproved_credits(
         "created_credit_ids": created_credits,
     }
 
+class CreditOfferWithId(BaseModel):
+    prestamo: float
+    interes: float
+    meses_originales: int
+    descripcion: str
+    gasto_inicial_mes: float
+    gasto_final_mes: float
+    product: ProductData
+    id_cred: int
 
-@router.post("/preapproved/{cliente_id}", response_model=CreditOffers)
+
+class CreditOffersWithId(BaseModel):
+    creditOffers: list[CreditOfferWithId]
+
+@router.post("/preapproved/{cliente_id}", response_model=CreditOffersWithId)
 async def get_preapproved_credit_endpoint(
     cliente_id: int, session: AsyncSession = Depends(get_session)
 ):
@@ -571,7 +597,7 @@ async def get_preapproved_credit_endpoint(
         )
 
         # Create CreditOffer
-        credit_offer = CreditOffer(
+        credit_offer = CreditOfferWithId(
             prestamo=credito.prestamo,
             interes=credito.interes,
             meses_originales=credito.meses_originales,
@@ -579,7 +605,8 @@ async def get_preapproved_credit_endpoint(
             gasto_inicial_mes=credito.gasto_inicial_mes or 0.0,
             gasto_final_mes=credito.gasto_final_mes or 0.0,
             product=product_data,
+            id_cred=credito.id_cred
         )
         credit_offers_list.append(credit_offer)
 
-    return CreditOffers(creditOffers=credit_offers_list)
+    return CreditOffersWithId(creditOffers=credit_offers_list)

@@ -7,7 +7,7 @@ interface ModalProps {
   title?: string;
   children: React.ReactNode;
   className?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -77,7 +77,9 @@ export const Modal: React.FC<ModalProps> = ({
     sm: 'max-w-xs',
     md: 'max-w-sm',
     lg: 'max-w-md',
-    xl: 'max-w-lg',
+    xl: 'max-w-2xl',
+    '2xl': 'max-w-4xl',
+    '3xl': 'max-w-6xl',
   };
 
   return (
@@ -98,7 +100,7 @@ export const Modal: React.FC<ModalProps> = ({
       <div
         className={`
   relative bg-white rounded-3xl shadow-xl mx-4 my-8
-  max-w-[540px] w-full max-h-[90vh] overflow-hidden
+  ${sizeClasses[size]} w-full max-h-[90vh] overflow-hidden
         transform transition-all duration-300 ease-out
         ${
           isAnimating

@@ -1,14 +1,38 @@
+
 # Créditos Verde Banorte
 
-## Descripción General
+## Objetivo del Proyecto
 
-Créditos Verde Banorte es una plataforma financiera que permite a usuarios solicitar, gestionar y monitorear créditos verdes, así como administrar sus transacciones y productos sustentables. El sistema cuenta con roles de cliente y administrador, y una arquitectura robusta basada en tecnologías modernas para backend y frontend.
+Créditos Verde Banorte es una plataforma financiera desarrollada para HackMTY 2025, cuyo objetivo es impulsar la adopción de productos y hábitos sustentables a través de créditos verdes personalizados. La plataforma busca facilitar la transición hacia un futuro más sostenible, integrando tecnología de punta y análisis inteligente para maximizar el impacto ambiental positivo.
+
+---
+
+## Novedades y Funcionalidades Destacadas
+
+- **Análisis de Crédito con Gemini AI:** Utilizamos Gemini AI para analizar el perfil de los usuarios, evaluar riesgos y recomendar créditos personalizados, mejorando la precisión y rapidez en la toma de decisiones.
+- **Recomendaciones Inteligentes de Productos Verdes:** El sistema sugiere productos sustentables adaptados al perfil y hábitos del usuario, integrando información de APIs externas y análisis de consumo.
+- **Dashboard Mejorado:** Visualización avanzada de créditos, transacciones y métricas de impacto ambiental.
+- **Chat Asistido por IA:** Soporte y asesoría personalizada mediante chat impulsado por Gemini AI.
+- **Gestión Administrativa Avanzada:** Herramientas para admins que permiten analizar solicitudes, cambiar estados de créditos y monitorear el portafolio verde.
+- **Integración de APIs Externas:** Consulta y recomendación de productos verdes reales mediante integración con fuentes externas.
+
+---
+
+## Uso de Gemini AI
+
+La plataforma integra Gemini AI en el backend para:
+- Analizar el perfil crediticio y hábitos de consumo de los usuarios.
+- Generar recomendaciones personalizadas de productos y créditos verdes.
+- Proveer chat inteligente para soporte y educación financiera.
+- Automatizar la evaluación de riesgos y la segmentación de clientes.
+
+La integración se realiza a través de módulos dedicados en el backend (`backend/gemini/`), permitiendo una experiencia más inteligente y adaptativa para usuarios y administradores.
 
 ---
 
 ## Arquitectura General
 
-- **Backend:** FastAPI (Python), SQLModel (ORM), SQLAlchemy (async), Pydantic, PostgreSQL/MySQL/SQLite (según despliegue)
+- **Backend:** FastAPI (Python), SQLModel (ORM), SQLAlchemy (async), Pydantic, Gemini AI, PostgreSQL/MySQL/SQLite (según despliegue)
 - **Frontend:** React (TypeScript), Vite, Axios, Context API
 - **Infraestructura:** API RESTful, separación de responsabilidades por routers, modelos y controladores
 - **Seguridad:** Validación de datos con Pydantic, manejo de errores explícito, CORS habilitado
@@ -81,12 +105,15 @@ Créditos Verde Banorte es una plataforma financiera que permite a usuarios soli
 - **Consumo de API:** Axios, URLs configurables por `.env`, manejo de errores y estados de carga.
 - **Rutas:** React Router para navegación entre login y dashboard.
 - **Actualización de saldo:** El frontend actualiza el saldo del usuario tras registrar transacciones.
+- **Componentes de UI personalizados:** Interfaz moderna y responsiva con componentes reutilizables.
+- **Integración con chat Gemini AI:** Asistencia y recomendaciones en tiempo real.
 
 ---
 
 ## Justificación de Diseño
 
 - **FastAPI + SQLModel:** Permite desarrollo rápido, validación automática y documentación interactiva.
+- **Integración de Gemini AI:** Inteligencia artificial para análisis crediticio, recomendaciones y chat.
 - **Separación de routers:** Facilita el mantenimiento y escalabilidad.
 - **Modelos Pydantic:** Garantizan integridad y validación de datos.
 - **Endpoints RESTful:** Claridad y estandarización para integración con frontend y otros servicios.
@@ -97,7 +124,7 @@ Créditos Verde Banorte es una plataforma financiera que permite a usuarios soli
 
 ## Tecnologías Empleadas
 
-- **Backend:** Python, FastAPI, SQLModel, SQLAlchemy, Pydantic, AsyncIO
+- **Backend:** Python, FastAPI, SQLModel, SQLAlchemy, Pydantic, Gemini AI, AsyncIO
 - **Frontend:** React, TypeScript, Vite, Axios
 - **Base de datos:** SQL (ORM agnóstico)
 - **Infraestructura:** Uvicorn, CORS, .env para configuración
@@ -113,10 +140,12 @@ graph TD
         A[LoginPage] -->|POST /clientes/login| B[API Backend]
         D[UserDashboard] -->|GET /clientes/{id}/creditos| B
         D -->|POST /transacciones/registrar| B
+        F[Chat Gemini AI] -->|POST /gemini/chat| B
     end
     subgraph Backend
         B --> C[DB: Clientes, Creditos, Items, Transacciones, Admin]
         B --> E[API Productos Externos]
+        B --> G[Gemini AI]
     end
 ```
 

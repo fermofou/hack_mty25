@@ -74,18 +74,35 @@ export default function CreditDetailPage() {
   }
 
   const handlePayment = async () => {
+    if (!credit || !user) return;
     setIsProcessing(true);
-    // Simulate payment processing
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsProcessing(false);
-    // Here you would integrate with actual payment API
-    alert(
-      `Pago procesado: $${
-        paymentType === 'monthly'
-          ? credit?.gasto_inicial_mes.toLocaleString('es-MX')
-          : Number(customAmount).toLocaleString('es-MX')
-      }`
-    );
+    const monto = paymentType === 'monthly'
+      ? credit.gasto_inicial_mes
+      : Number(customAmount);
+    try {
+      const { data } = await api.post('/creditos/pagar', {
+        credito_id: credit.id_cred,
+        cliente_id: user.id,
+        monto,
+      });
+      // Update credit and user data with response
+      setCredit(data.credito);
+      if (typeof window !== 'undefined' && window.localStorage) {
+        // Update user in Auth context and localStorage
+        const updatedUser = { ...user, ...data.cliente };
+        window.localStorage.setItem('user', JSON.stringify(updatedUser));
+        // If useAuth provides a setter, call it here (if available)
+        if (typeof (window as any).setUser === 'function') {
+          (window as any).setUser(updatedUser);
+        }
+      }
+      alert(`Pago procesado: $${monto.toLocaleString('es-MX')}`);
+    } catch (err) {
+      alert('Error al procesar el pago. Intenta de nuevo.');
+      console.error(err);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const calculateRemainingMonths = () => {
