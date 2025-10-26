@@ -211,7 +211,8 @@ async def build_creditos_response(creditos, session):
                     "estado": credito.estado,
                     "fecha_inicio": credito.fecha_inicio,
                     "pagado": credito.pagado,
-                    "restante": credito.prestamo - credito.pagado
+                    "restante": credito.prestamo - credito.pagado,
+                    "oferta": credito.oferta,
                 },
                 "cliente": {
                     "nombre": cliente.nombre,
