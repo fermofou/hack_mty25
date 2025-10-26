@@ -50,6 +50,7 @@ export interface Credit {
   fecha_inicio: string;
   pagado: number;
   restante: number;
+  oferta: boolean;
 }
 
 export default function CreditsPage() {
@@ -59,9 +60,8 @@ export default function CreditsPage() {
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStats | undefined>();
   const [userCredits, setUserCredits] = useState<Credit[] | undefined>();
   const [preapprovedCredits, setPreapprovedCredits] = useState<
-    ApiCreditOffer[]
-  >([]);
-  const [loadingPreapproved, setLoadingPreapproved] = useState(false);
+    ApiCreditOffer[] | undefined
+  >();
 
   useEffect(() => {
     const fetchMontlyStats = async () => {
@@ -80,8 +80,13 @@ export default function CreditsPage() {
       try {
         const { data } = await api.get(`/clientes/${user.id}/creditos`);
         console.log("credits", data);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setUserCredits(data.map((res: any) => res.credito));
+        setUserCredits(
+          data
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .map((res: any) => res.credito)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .filter((credit: any) => !credit.oferta)
+        );
       } catch (err: unknown) {
         console.log(err);
       }
@@ -89,10 +94,8 @@ export default function CreditsPage() {
 
     const loadPreapprovedCredits = async () => {
       if (!user?.id) return;
-      setLoadingPreapproved(true);
       const credits = await fetchPreapprovedCredits(user.id);
       setPreapprovedCredits(credits);
-      setLoadingPreapproved(false);
       console.log("preapproved credits", credits);
     };
 
@@ -106,7 +109,12 @@ export default function CreditsPage() {
   }
 
   const approvedCredits = userCredits?.filter((c) => c.estado === "ACEPTADO");
-  const pendingCredits = userCredits?.filter((c) => c.estado === "PENDIENTE");
+  let pendingCredits = userCredits?.filter(
+    (c) => c.estado === "PENDIENTE" || c.estado === "APROBADO"
+  );
+  pendingCredits = pendingCredits?.sort((a, b) => {
+    return a.estado < b.estado ? -1 : 1;
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -136,44 +144,43 @@ export default function CreditsPage() {
           {/* Left Column: Offers and Credits */}
           <div className="space-y-8">
             {/* Preapproved Credit Cards */}
-            <div>
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                Tus ofertas
-              </h2>
-              {loadingPreapproved ? (
-                <div className="flex justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-b-transparent border-[#EB0029]"></div>
+            {preapprovedCredits !== undefined &&
+              preapprovedCredits.length > 0 && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    Tus ofertas
+                  </h2>
+                  {preapprovedCredits.length > 0 ? (
+                    <div className="space-y-6">
+                      {preapprovedCredits.map((credit, index) => (
+                        <PreapprovedCreditCard
+                          key={index}
+                          offer={transformCreditOffer(credit)}
+                          showDetailsInModal={true}
+                          onApply={() => {
+                            const productLink = credit.product?.link;
+                            if (productLink) {
+                              window.open(productLink, "_blank");
+                            }
+                          }}
+                          onDismiss={() =>
+                            console.log(`Dismissed offer ${index + 1}`)
+                          }
+                          className="w-full"
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <Card>
+                      <CardContent className="flex flex-col items-center justify-center py-12">
+                        <p className="text-muted-foreground mb-4">
+                          No tienes ofertas preaprobadas en este momento
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
-              ) : preapprovedCredits.length > 0 ? (
-                <div className="space-y-6">
-                  {preapprovedCredits.map((credit, index) => (
-                    <PreapprovedCreditCard
-                      key={index}
-                      offer={transformCreditOffer(credit)}
-                      showDetailsInModal={true}
-                      onApply={() => {
-                        const productLink = credit.product?.link;
-                        if (productLink) {
-                          window.open(productLink, "_blank");
-                        }
-                      }}
-                      onDismiss={() =>
-                        console.log(`Dismissed offer ${index + 1}`)
-                      }
-                      className="w-full"
-                    />
-                  ))}
-                </div>
-              ) : (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <p className="text-muted-foreground mb-4">
-                      No tienes ofertas preaprobadas en este momento
-                    </p>
-                  </CardContent>
-                </Card>
               )}
-            </div>
 
             {/* Pending credits */}
             {pendingCredits && pendingCredits.length > 0 && (
@@ -200,9 +207,16 @@ export default function CreditsPage() {
                               {credit.descripcion}
                             </p>
                           </div>
-                          <Badge className="bg-[#FFA500] text-white">
-                            Pendiente
-                          </Badge>
+                          {credit.estado === "PENDIENTE" && (
+                            <Badge className="bg-[#FFA500] text-white">
+                              Pendiente
+                            </Badge>
+                          )}
+                          {credit.estado === "APROBADO" && (
+                            <Badge className="bg-blue-500 text-white">
+                              Aprobado
+                            </Badge>
+                          )}
                         </div>
                         <div className="flex gap-6 text-sm">
                           <div>
@@ -411,7 +425,12 @@ export default function CreditsPage() {
                         ).toLocaleString("es-MX")}
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Por mes
+                        $
+                        {(
+                          (monthlyStats?.current_monthly_savings?.money ?? 0) *
+                          12
+                        ).toLocaleString("es-MX")}{" "}
+                        al año
                       </p>
                     </CardContent>
                   </Card>
